@@ -1,64 +1,33 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.group1.bookit;
 
 import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
-import com.google.zxing.MultiFormatWriter;
-
 import java.awt.image.BufferedImage;
+import java.util.Map;
 
 public final class CodeGenerator {
+    private CodeGenerator() {}
 
-    private CodeGenerator() {
-        // Prevents creating an object from this utility class.
-    }
-
-    public static BufferedImage generateBookBarcode(int bookCopyId)
-            throws WriterException {
-
-        String bookValue = "BOOK:" + bookCopyId;
-
-        BitMatrix barcode = new MultiFormatWriter().encode(
-                bookValue,
-                BarcodeFormat.CODE_128,
-                500,
-                120
-        );
-
-        return MatrixToImageWriter.toBufferedImage(barcode);
-    }
-
-    public static BufferedImage generateLoginQrCode(String loginToken)
-        throws WriterException {
-
-            String qrValue = "LOGIN:" + loginToken;
-
-            BitMatrix qrCode = new MultiFormatWriter().encode(
-                    qrValue,
-                    BarcodeFormat.QR_CODE,
-                    300,
-                    300
-            );
-
-            return MatrixToImageWriter.toBufferedImage(qrCode);
+    public static BufferedImage generateBookBarcode(String bookCopyId) throws WriterException {
+        if (bookCopyId == null || !bookCopyId.matches("[\\x21-\\x7E]{1,45}")) {
+            throw new IllegalArgumentException("Use a copy ID of 1 to 45 printable ASCII characters.");
         }
+        BitMatrix matrix = new MultiFormatWriter().encode(
+                "BOOK:" + bookCopyId, BarcodeFormat.CODE_128, 600, 150);
+        return MatrixToImageWriter.toBufferedImage(matrix);
+    }
 
-    public static BufferedImage generateAdminQrCode(String adminToken) throws WriterException {
-
-        String adminValue = "ADMIN:" + adminToken;
-
-        BitMatrix qrCode = new MultiFormatWriter().encode(
-                adminValue,
-                BarcodeFormat.QR_CODE,
-                300,
-                300
-        );
-
-        return MatrixToImageWriter.toBufferedImage(qrCode);
+    public static BufferedImage generateLoginQrCode(String rawToken) throws WriterException {
+        if (!QrTokens.isValidToken(rawToken)) {
+            throw new IllegalArgumentException("A generated login token is required.");
+        }
+        BitMatrix matrix = new MultiFormatWriter().encode(
+                "LOGIN:" + rawToken, BarcodeFormat.QR_CODE, 360, 360,
+                Map.of(EncodeHintType.CHARACTER_SET, "UTF-8", EncodeHintType.MARGIN, 4));
+        return MatrixToImageWriter.toBufferedImage(matrix);
     }
 }

@@ -13,11 +13,19 @@ import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.Image;
 import javafx.geometry.Rectangle2D;
+import javafx.animation.PauseTransition;
+import javafx.scene.control.Label;
+import javafx.stage.Popup;
+import javafx.stage.Window;
+import javafx.util.Duration;
 
 import java.awt.image.BufferedImage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+
+import com.group1.bookit.AuthenticationService.AuthenticatedUser;
 
 public class QRreaderController {
 
@@ -95,18 +103,22 @@ public class QRreaderController {
                     String CodeValue = scanCode(frame);
 
                     if (CodeValue != null) {
-                        scanning.set(false);
+                        AuthenticatedUser user =
+                                authenticationService.authenticateQrToken(CodeValue);
 
-                        Platform.runLater(() -> {
-                            scanResultLabel.setText(
-                                    "code found: " + CodeValue
+                        if (user != null) {
+                            scanning.set(false);
+
+                            Platform.runLater(() ->
+                                    onLoginSuccess.accept(user)
                             );
-
-                            // Add your database search here:
-                            // findBookByQrCode(qrCodeValue);
-                        });
+                        } else {
+                            // Do not show the token itself—it is a login credential.
+                            Platform.runLater(() ->
+                                    scanResultLabel.setText("Invalid login QR code.")
+                            );
+                        }
                     }
-
                     Thread.sleep(30);
                 }
 
@@ -159,5 +171,52 @@ public class QRreaderController {
         if (cameraExecutor != null && !cameraExecutor.isShutdown()) {
             cameraExecutor.shutdownNow();
         }
+    }
+    private final AuthenticationService authenticationService =
+        new AuthenticationService();
+
+    private Consumer<AuthenticatedUser> onLoginSuccess = user -> {};
+
+    public void setOnLoginSuccess(
+            Consumer<AuthenticatedUser> onLoginSuccess
+    ) {
+        this.onLoginSuccess = java.util.Objects.requireNonNull(onLoginSuccess);
+    }
+
+    private void showTimedPopup(String message, boolean success) {
+        Platform.runLater(() -> {
+            Popup popup = new Popup();
+
+            Label messageLabel = new Label(message);
+
+            String color = success ? "#55D6BE" : "#E85D75";
+
+            messageLabel.setStyle(
+                    "-fx-background-color: #171C2B;" +
+                    "-fx-text-fill: white;" +
+                    "-fx-border-color: " + color + ";" +
+                    "-fx-border-width: 2;" +
+                    "-fx-background-radius: 10;" +
+                    "-fx-border-radius: 10;" +
+                    "-fx-padding: 14;" +
+                    "-fx-font-size: 15px;"
+            );
+
+            popup.getContent().add(messageLabel);
+
+            Window owner = cameraImage.getScene().getWindow();
+
+            popup.show(
+                    owner,
+                    owner.getX() + 70,
+                    owner.getY() + 80
+            );
+
+            PauseTransition delay = new PauseTransition(Duration.seconds(2));
+
+            delay.setOnFinished(event -> popup.hide());
+
+            delay.play();
+        });
     }
 }

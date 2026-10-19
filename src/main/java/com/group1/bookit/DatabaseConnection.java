@@ -12,6 +12,7 @@ import io.github.cdimascio.dotenv.Dotenv;
  * @author John Mark
  */
 public class DatabaseConnection {
+    private DatabaseConnection() {}
     private static final Dotenv dotenv = Dotenv.load();
     //For Online eto 
     public static final String ONLINE_DATABASE_URL = dotenv.get("DB_URL");

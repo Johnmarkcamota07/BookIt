@@ -1,5 +1,9 @@
 package com.group1.bookit;
 
+import com.group1.bookit.AuthenticationService.AuthenticatedUser;
+import java.io.IOException;
+import java.net.URL;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -14,112 +18,119 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.scene.paint.Color;
 
-import java.io.IOException;
-import java.net.URL;
-
 public class PrimaryController {
+    private final AuthenticationService authenticationService = new AuthenticationService();
 
-    @FXML
-    private TextField usernameField;
-
-    @FXML
-    private PasswordField passwordField;
-
-    @FXML
-    private Label loginMessageLabel;
-
-    @FXML
-    private void openQrReader(ActionEvent event) {
-        try {
-            URL fxmlLocation = getClass().getResource(
-                    "/com/group1/bookit/QRreader.fxml"
-            );
-
-            if (fxmlLocation == null) {
-                throw new IOException(
-                        "Could not find QRreader.fxml in resources."
-                );
-            }
-
-            FXMLLoader loader = new FXMLLoader(fxmlLocation);
-            Parent qrRoot = loader.load();
-
-            Stage loginStage = (Stage) ((Node) event.getSource())
-                    .getScene()
-                    .getWindow();
-
-            Stage qrStage = new Stage();
-            qrStage.setTitle("BookIt QR Reader");
-            qrStage.setScene(new Scene(qrRoot));
-            qrStage.setResizable(false);
-
-            qrStage.initOwner(loginStage);
-            qrStage.initModality(Modality.WINDOW_MODAL);
-
-            QRreaderController qrController = loader.getController();
-
-            qrStage.setOnHidden(windowEvent -> qrController.stopScanner());
-
-            qrStage.show();
-
-        } catch (IOException exception) {
-            showError(
-                    "QR Reader Error",
-                    "The QR reader screen could not be opened.",
-                    exception.getMessage()
-            );
-        }
-    }
+    @FXML private TextField usernameField;
+    @FXML private PasswordField passwordField;
+    @FXML private Label loginMessageLabel;
 
     @FXML
     private void handleLogin(ActionEvent event) {
-        System.out.println("button was pressed");
         String username = usernameField.getText().trim();
         String password = passwordField.getText();
-
         if (username.isEmpty() || password.isEmpty()) {
             loginMessageLabel.setText("Enter your username and password.");
             loginMessageLabel.setTextFill(Color.WHITE);
             return;
         }
 
-        boolean isAuthenticated = authenticate(username, password);
+        Node button = (Node) event.getSource();
+        Scene loginScene = button.getScene();
+        Stage loginStage = (Stage) loginScene.getWindow();
+        // Block duplicate submissions and opening QR while password login is pending.
+        loginScene.getRoot().setDisable(true);
+        passwordField.clear();
+        loginMessageLabel.setText("Signing in...");
+        loginMessageLabel.setTextFill(Color.GREEN);
+        
 
-        if (isAuthenticated) {
-            loginMessageLabel.setText("Login successful.");
-            loginMessageLabel.setTextFill(Color.GREEN);
-            Stage loginStage = (Stage) ((Node) event.getSource())
-                    .getScene()
-                    .getWindow();
+        Task<AuthenticatedUser> task = new Task<>() {
+            @Override
+            protected AuthenticatedUser call() throws Exception {
+                return authenticationService.authenticatePassword(username, password);
+            }
+        };
+        task.setOnSucceeded(done -> {
+            loginScene.getRoot().setDisable(false);
+            //prevents error by not processing after user left the log in 
+            if (!loginStage.isShowing() || loginStage.getScene() != loginScene) return;
+            AuthenticatedUser user = task.getValue();
+            if (user == null) {
+                loginMessageLabel.setText("Username or Password is Incorrect");
+                loginMessageLabel.setTextFill(Color.RED);
+            } else {
+                completeLogin(user, loginStage);
+            }
+        });
+        task.setOnFailed(done -> {
+            loginScene.getRoot().setDisable(false);
+            if (loginStage.isShowing() && loginStage.getScene() == loginScene) {
+                loginMessageLabel.setText("Unable to sign in. Check the database connection.");
+                loginMessageLabel.setTextFill(Color.RED);
+            }
+        });
 
-            openDashboard(loginStage);
+        Thread worker = new Thread(task, "bookit-password-login");
+        worker.setDaemon(true);
+        worker.start();
+    }
 
-        } else {
-            loginMessageLabel.setText("Invalid username or password.");
-            loginMessageLabel.setTextFill(Color.RED);
-            passwordField.clear();
+    @FXML
+    private void openQrReader(ActionEvent event) {
+        Node button = (Node) event.getSource();
+        Scene loginScene = button.getScene();
+        Stage loginStage = (Stage) loginScene.getWindow();
+        try {
+            URL location = getClass().getResource("/com/group1/bookit/QRreader.fxml");
+            if (location == null) throw new IOException("QRreader.fxml was not found.");
+            FXMLLoader loader = new FXMLLoader(location);
+            Parent qrRoot = loader.load();
+            QRreaderController qrController = loader.getController();
+
+            Stage qrStage = new Stage();
+            qrStage.setTitle("BookIt QR Reader");
+            qrStage.setScene(new Scene(qrRoot));
+            qrStage.setResizable(false);
+            qrStage.initOwner(loginStage);
+            qrStage.initModality(Modality.WINDOW_MODAL);
+
+            qrController.setOnLoginSuccess(user -> {
+                // QRreaderController must call this on the JavaFX thread, only
+                // after AuthenticationService has returned a verified account.
+                if (!qrStage.isShowing()) return;
+                qrStage.close();
+                if (loginStage.isShowing() && loginStage.getScene() == loginScene) {
+                    completeLogin(user, loginStage);
+                }
+            });
+            qrStage.setOnHidden(hidden -> qrController.stopScanner());
+            qrStage.show();
+        } catch (IOException | RuntimeException error) {
+            showError(loginStage, "QR Reader Error",
+                    "The QR reader could not open. Check QRreader.fxml and its controller.");
         }
     }
 
-    private boolean authenticate(String username, String password) {
-        // SQL/database validation here later.
-        return false;
+    private void completeLogin(AuthenticatedUser user, Stage loginStage) {
+        try {
+            Navigation.showDashboard(loginStage, user);
+        } catch (IOException | RuntimeException error) {
+            // stay on log in screen while loading dashboard
+            SessionManager.logout();
+            loginMessageLabel.setText("The dashboard could not open. Check its FXML and controller.");
+            loginMessageLabel.setTextFill(Color.RED);
+            showError(loginStage, "Dashboard Error",
+                    "Confirm AdminDashboard.fxml and UserDashboard.fxml are in your resources folder.");
+        }
     }
 
-    private void openDashboard(Stage loginStage) {
-        // Temporary: replace this with Dashboard.fxml loading later.
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Login Successful");
-        alert.setHeaderText(null);
-        alert.setContentText("Login passed. Dashboard will open here.");
-        alert.showAndWait();
-    }
-
-    private void showError(String title, String header, String details) {
+    private void showError(Stage owner, String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.initOwner(owner);
         alert.setTitle(title);
-        alert.setHeaderText(header);
-        alert.setContentText(details);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
         alert.showAndWait();
     }
 }
