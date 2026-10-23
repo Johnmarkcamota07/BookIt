@@ -1,12 +1,14 @@
 package com.group1.bookit;
 
 import java.sql.Connection;
+import java.sql.SQLException;
         
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+
 
 import java.io.IOException;
 
@@ -36,8 +38,15 @@ public class App extends Application {
     }
 
     public static void main(String[] args) {
-        System.out.println("Starting Database connection check");
-        Connection db = DatabaseConnection.getConnection();
+        try (Connection db = DatabaseConnection.getConnection()) {
+            System.out.println("Database connection successful.");
+        } catch (SQLException exception) {
+            System.err.println(
+                    "Database connection failed. SQLState: "
+                    + exception.getSQLState()
+            );
+        }
+
         launch();
     }
 

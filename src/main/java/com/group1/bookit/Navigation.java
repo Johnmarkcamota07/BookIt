@@ -15,9 +15,12 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 public final class Navigation {
     private static final String ROOT = "/com/group1/bookit/";
+    private static final String DASHBOARD = "bookit.currentDashboard";
+    private static final String CLEANUP_INSTALLED = "bookit.cleanupInstalled";
 
     private Navigation() {}
 
@@ -46,25 +49,60 @@ public final class Navigation {
         }
 
         // Pass the account AFTER FXML injection; no session is needed in initialize().
-        controller.setUser(user);
-        Scene nextScene = new Scene(root);
+        final Scene nextScene;
+        try {
+            controller.setUser(user);
+            nextScene = new Scene(root);
+        } catch (RuntimeException error) {
+            // setUser may already have started a background read.
+            try { controller.dispose(); }
+            catch (RuntimeException cleanupError) { error.addSuppressed(cleanupError); }
+            throw error;
+        }
 
         // Save the session only after the dashboard is successfully prepared.
+        disposeDashboard(stage);
         SessionManager.login(user);
+        stage.getProperties().put(DASHBOARD, controller);
+        if (!stage.getProperties().containsKey(CLEANUP_INSTALLED)) {
+            stage.addEventHandler(WindowEvent.WINDOW_HIDDEN, event -> {
+                try { disposeDashboard(stage); }
+                finally { SessionManager.logout(); }
+            });
+            stage.getProperties().put(CLEANUP_INSTALLED, Boolean.TRUE);
+        }
+        // Measure normal-window bounds before requesting fullscreen below.
+        stage.setFullScreen(false);
+        stage.setMaximized(false);
         stage.setScene(nextScene);
         stage.setTitle(title);
         stage.setResizable(true);
         stage.sizeToScene();
         stage.centerOnScreen();
         stage.show();
+        // Include the native title bar/borders so the scene remains at least
+        // 1024 x 700. FXML minimums alone do not constrain the desktop window.
+        double frameWidth = Math.max(0, stage.getWidth() - nextScene.getWidth());
+        double frameHeight = Math.max(0, stage.getHeight() - nextScene.getHeight());
+        stage.setMinWidth(1024 + frameWidth);
+        stage.setMinHeight(700 + frameHeight);
+        // Apply to either role. Keep the default Escape shortcut available.
+        stage.setFullScreen(true);
     }
 
     public static void logout(Stage stage) throws IOException {
         requireFxThread();
         SessionManager.logout();
+        disposeDashboard(stage);
+        // The login screen must not inherit the dashboard's display mode.
+        stage.setFullScreen(false);
+        stage.setMaximized(false);
 
         FXMLLoader loader = loaderFor("LogIn.fxml");
         Parent root = loader.load();
+        // The existing login screen may be smaller than the dashboards.
+        stage.setMinWidth(0);
+        stage.setMinHeight(0);
         stage.setScene(new Scene(root));
         stage.setTitle("BookIt - Log In");
         stage.setResizable(true);
@@ -102,6 +140,11 @@ public final class Navigation {
         URL location = Navigation.class.getResource(ROOT + filename);
         if (location == null) throw new IOException("Missing resource: " + ROOT + filename);
         return new FXMLLoader(location);
+    }
+
+    private static void disposeDashboard(Stage stage) {
+        Object controller = stage.getProperties().remove(DASHBOARD);
+        if (controller instanceof DashboardView dashboard) dashboard.dispose();
     }
 
     private static void requireFxThread() {

@@ -84,11 +84,33 @@ public final class AuthenticationService {
     // Returns a RAW token for CodeGenerator.generateLoginQrCode(token).
     // null means rejected; admin accounts intentionally use password login.
     public String issueOrReplaceUserQr(String username, String password) throws SQLException {
+        return issueOrReplaceUserQr(username, password, null);
+    }
+
+    /**
+     * Creates or replaces the signed-in USER's reusable QR after password confirmation.
+     * The immutable session ID and current database role are checked while the account
+     * row is locked, so a renamed or reassigned username cannot issue another user's QR.
+     * Invalid actors are rejected before connecting. Returns {@code null} on rejection;
+     * password-failure counters still commit. Returns the raw token only after the
+     * hash-only replacement commits; pass it to CodeGenerator.generateLoginQrCode.
+     * SQL failures roll back and propagate. Call this off the JavaFX UI thread.
+     */
+    public String issueOrReplaceUserQr(AuthenticatedUser expectedUser, String password)
+            throws SQLException {
+        if (expectedUser == null || expectedUser.userId() == null
+                || expectedUser.userId().isBlank() || !"USER".equals(expectedUser.role())
+                || !validInput(expectedUser.username(), password)) return null;
+        return issueOrReplaceUserQr(expectedUser.username(), password, expectedUser);
+    }
+
+    private String issueOrReplaceUserQr(String username, String password,
+                                       AuthenticatedUser expectedUser) throws SQLException {
         if (!validInput(username, password)) return null;
         char[] entered = password.toCharArray();
         try {
             return transaction(connection -> {
-                Account account = checkPassword(connection, username.trim(), entered);
+                Account account = checkPassword(connection, username.trim(), entered, expectedUser);
                 if (account == null || !account.user().role().equals("USER")) return null;
                 String token = QrTokens.generate();
                 try (PreparedStatement remove = connection.prepareStatement(
@@ -114,6 +136,11 @@ public final class AuthenticationService {
 
     private Account checkPassword(Connection connection, String username, char[] entered)
             throws SQLException {
+        return checkPassword(connection, username, entered, null);
+    }
+
+    private Account checkPassword(Connection connection, String username, char[] entered,
+                                  AuthenticatedUser expectedUser) throws SQLException {
         Account account;
         String sql = """
             SELECT user_id, username, role, password_hash, status,
@@ -135,6 +162,8 @@ public final class AuthenticationService {
                         rows.getBoolean("locked"), rows.getInt("failures"));
             }
         }
+        if (expectedUser != null && (!expectedUser.userId().equals(account.user().userId())
+                || !"USER".equals(account.user().role()))) return null;
         if (!account.active() || account.locked()) return null;
         if (!PasswordHasher.verify(entered, account.passwordHash())) {
             int attempts = account.failures() + 1;

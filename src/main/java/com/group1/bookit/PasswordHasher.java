@@ -18,8 +18,8 @@ public final class PasswordHasher {
     private PasswordHasher() {}
 
     public static String hash(char[] password) {
-        if (password == null || password.length < 15 || password.length > 1024) {
-            throw new IllegalArgumentException("Use a password of 15 to 1024 characters.");
+        if (password == null || password.length < 8 || password.length > 1024) {
+            throw new IllegalArgumentException("Use a password of 8 to 1024 characters.");
         }
         byte[] salt = new byte[16];
         RANDOM.nextBytes(salt);

@@ -8,4 +8,5 @@ import com.group1.bookit.AuthenticationService.AuthenticatedUser;
 
 public interface DashboardView {
     void setUser(AuthenticatedUser user);
+    default void dispose() {}
 }

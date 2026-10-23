@@ -117,6 +117,7 @@ public class PrimaryController {
             Navigation.showDashboard(loginStage, user);
         } catch (IOException | RuntimeException error) {
             // stay on log in screen while loading dashboard
+            error.printStackTrace();
             SessionManager.logout();
             loginMessageLabel.setText("The dashboard could not open. Check its FXML and controller.");
             loginMessageLabel.setTextFill(Color.RED);
