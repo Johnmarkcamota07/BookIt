@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+
+<?import javafx.scene.image.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.group1.bookit.UserDashboardController"
+            fx:id="root" prefWidth="1240.0" prefHeight="820.0"
+            minWidth="1024.0" minHeight="700.0"
+            stylesheets="@bookit-dashboard.css" styleClass="app-root">
+    <left>
+        <VBox prefWidth="220.0" minWidth="220.0" maxWidth="220.0"
+              spacing="16.0" styleClass="sidebar">
+            <padding><Insets top="28.0" right="18.0" bottom="20.0" left="18.0"/></padding>
+            <ImageView fx:id="sidebarLogo"
+                        fitWidth="178.0"
+                        fitHeight="145.0"
+                        preserveRatio="true"
+                        smooth="true">
+                 <image>
+                     <Image url="@images/logo2.png"/>
+                 </image>
+             </ImageView>
+            <Label text="YOUR LIBRARY, CONNECTED" styleClass="sidebar-caption"/>
+            <Separator/>
+            <Label text="MEMBER WORKSPACE" styleClass="sidebar-caption"/>
+            <VBox fx:id="navigationBox" spacing="6.0"/>
+            <Region VBox.vgrow="ALWAYS"/>
+            <VBox spacing="5.0" styleClass="sidebar-footer">
+                <Label text="SIGNED IN AS" styleClass="sidebar-caption"/>
+                <Label fx:id="accountNameLabel" text="Loading account…" wrapText="true" styleClass="sidebar-account"/>
+                <Label text="Library member" styleClass="sidebar-caption"/>
+                <Button text="Log out" onAction="#handleLogout" maxWidth="Infinity"
+                        styleClass="danger-button"/>
+            </VBox>
+        </VBox>
+    </left>
+    <center>
+        <VBox styleClass="workspace">
+            <VBox spacing="7.0" styleClass="page-header">
+                <HBox alignment="CENTER_LEFT" spacing="16.0">
+                    <Label fx:id="pageTitleLabel" text="Overview" styleClass="page-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="dataModeLabel" text="NOT CONNECTED" styleClass="offline-badge"/>
+                </HBox>
+                <Label fx:id="pageSubtitleLabel" text="A little more discovery. A little less paperwork."
+                       wrapText="true" styleClass="page-subtitle"/>
+            </VBox>
+            <ScrollPane fx:id="contentScroll" fitToWidth="true" hbarPolicy="NEVER"
+                        VBox.vgrow="ALWAYS" styleClass="content-scroll">
+                <content>
+                    <VBox fx:id="contentBox" spacing="22.0" styleClass="page-content">
+                        <padding><Insets top="24.0" right="28.0" bottom="32.0" left="28.0"/></padding>
+                    </VBox>
+                </content>
+            </ScrollPane>
+        </VBox>
+    </center>
+</BorderPane>
