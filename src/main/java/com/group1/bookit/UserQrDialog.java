@@ -8,6 +8,8 @@ import com.group1.bookit.AuthenticationService.AuthenticatedUser;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -19,8 +21,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import javafx.application.Platform;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -28,14 +30,9 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -51,20 +48,16 @@ public final class UserQrDialog {
     private final Stage stage = new Stage();
     private final AuthenticatedUser actor;
     private final Issuer issuer;
-    private final PasswordField password = new PasswordField();
-    private final CheckBox consent = new CheckBox(
-            "I understand generating a new QR invalidates my previous QR immediately.");
-    private final Button generate = new Button("Generate / replace QR");
-    private final Button save = new Button("Save PNG");
-    private final Button close = new Button("Close");
-    private final Label status = new Label("No QR generated in this window yet.");
-    private final ImageView preview = new ImageView();
-    private final Label placeholder = new Label("Your QR will appear here");
-    private final ExecutorService worker = Executors.newSingleThreadExecutor(task -> {
-        Thread thread = new Thread(task, "bookit-qr-generation");
-        thread.setDaemon(true);
-        return thread;
-    });
+    @FXML private PasswordField password;
+    @FXML private CheckBox consent;
+    @FXML private Button generate;
+    @FXML private Button save;
+    @FXML private Button close;
+    @FXML private Label status;
+    @FXML private ImageView preview;
+    @FXML private Label placeholder;
+    @FXML private Label accountLabel;
+    private final ExecutorService worker;
     private byte[] png;
     private boolean busy;
     private boolean saved;
@@ -75,7 +68,16 @@ public final class UserQrDialog {
         requireFxThread();
         AuthenticationService authentication =
                 new AuthenticationService(DatabaseConnection::getConnection);
-        new UserQrDialog(owner, actor, authentication::issueOrReplaceUserQr).stage.showAndWait();
+        try {
+            new UserQrDialog(owner, actor, authentication::issueOrReplaceUserQr).stage.showAndWait();
+        } catch (UncheckedIOException error) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            if (owner != null) alert.initOwner(owner);
+            alert.setTitle("Library QR unavailable");
+            alert.setHeaderText("The library QR screen could not be loaded.");
+            alert.setContentText("Check that UserQr.fxml and user-qr.css are in the bookit resource folder, then Clean and Build.");
+            alert.showAndWait();
+        }
     }
 
     /** Package-level seam for offline tests; construction does not access SQL. */
@@ -84,7 +86,6 @@ public final class UserQrDialog {
         if (actor == null || actor.userId() == null || actor.userId().isBlank()
                 || actor.username() == null || actor.username().isBlank()
                 || !"USER".equals(actor.role())) {
-            worker.shutdown();
             throw new IllegalArgumentException("Only a signed-in USER can generate a library QR.");
         }
         this.actor = actor;
@@ -97,55 +98,16 @@ public final class UserQrDialog {
         stage.setMinWidth(460);
         stage.setMinHeight(480);
 
-        password.setId("qrPassword");
-        password.setPromptText("Enter your current password");
-        password.setAccessibleText("Confirm your current password to generate a QR");
-        consent.setId("qrConsent");
-        consent.setWrapText(true);
-        generate.setId("qrGenerate");
-        save.setId("qrSave");
-        close.setId("qrClose");
-        preview.setId("qrPreview");
-        status.setId("qrStatus");
-        preview.setFitWidth(280);
-        preview.setFitHeight(280);
-        preview.setPreserveRatio(true);
-        preview.setSmooth(false);
-        StackPane imageBox = new StackPane(preview, placeholder);
-        imageBox.setMinHeight(296);
-        imageBox.setStyle("-fx-background-color: white; -fx-border-color: #ccd5e0; -fx-padding: 8;");
-        placeholder.setStyle("-fx-text-fill: #526277;");
-        VBox content = new VBox(14,
-                text("MY LIBRARY QR", "section-title"),
-                text("Account: " + actor.username(), "muted"),
-                text("This is a reusable login credential, not your password. Anyone with a copy can use it. Keep the image private.", "section-note"),
-                imageBox, password, consent, new HBox(10, generate, save), status,
-                text("Save the PNG to keep it for future visits. Reopening this window cannot recover an earlier QR from its database hash.", "section-note"));
-        content.setPadding(new Insets(22));
-        status.setWrapText(true);
-        status.getStyleClass().add("muted");
-        ScrollPane scroll = new ScrollPane(content);
-        scroll.setFitToWidth(true);
-        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        HBox footer = new HBox(close);
-        footer.setAlignment(Pos.CENTER_RIGHT);
-        footer.setPadding(new Insets(10, 22, 16, 22));
-        BorderPane frame = new BorderPane(scroll);
-        frame.setBottom(footer);
-        frame.setStyle("-fx-background-color: #f4f7fb;");
-        Scene scene = new Scene(frame, 580, 720);
-        var stylesheet = UserQrDialog.class.getResource("/com/group1/bookit/bookit-dashboard.css");
-        if (stylesheet != null) scene.getStylesheets().add(stylesheet.toExternalForm());
-        content.setStyle("-fx-background-color: #f4f7fb;");
-        generate.getStyleClass().add("primary-button");
-        save.getStyleClass().add("secondary-button");
-        close.getStyleClass().add("secondary-button");
+        Scene scene = loadScene();
+        // No output worker is allocated for an invalid account or a failed FXML load.
+        worker = Executors.newSingleThreadExecutor(task -> {
+            Thread thread = new Thread(task, "bookit-qr-generation");
+            thread.setDaemon(true);
+            return thread;
+        });
         stage.setScene(scene);
         password.textProperty().addListener((observable, before, after) -> updateControls());
         consent.selectedProperty().addListener((observable, before, after) -> updateControls());
-        generate.setOnAction(event -> generate());
-        save.setOnAction(event -> chooseSave());
-        close.setOnAction(event -> requestClose());
         stage.setOnCloseRequest(event -> { if (!canClose()) event.consume(); });
         stage.setOnHidden(event -> dispose());
         scene.setOnKeyPressed(event -> {
@@ -159,6 +121,31 @@ public final class UserQrDialog {
 
     Stage window() { return stage; }
 
+    private Scene loadScene() {
+        URL location = UserQrDialog.class.getResource("/com/group1/bookit/UserQr.fxml");
+        if (location == null) {
+            throw new UncheckedIOException(new IOException("UserQr.fxml is missing from the application resources."));
+        }
+        FXMLLoader loader = new FXMLLoader(location);
+        loader.setControllerFactory(type -> {
+            if (type != UserQrDialog.class) {
+                throw new IllegalStateException("UserQr.fxml must use UserQrDialog.");
+            }
+            return this;
+        });
+        try {
+            return new Scene(loader.load());
+        } catch (IOException error) {
+            throw new UncheckedIOException("The library QR layout could not be loaded.", error);
+        }
+    }
+
+    @FXML
+    private void initialize() {
+        accountLabel.setText("Account: " + actor.username());
+    }
+
+    @FXML
     private void generate() {
         if (busy || disposed || uncertain || password.getText().isEmpty() || !consent.isSelected()) return;
         final String enteredPassword = password.getText();
@@ -194,6 +181,7 @@ public final class UserQrDialog {
         });
     }
 
+    @FXML
     private void chooseSave() {
         if (busy || disposed || png == null) return;
         FileChooser chooser = new FileChooser();
@@ -278,6 +266,7 @@ public final class UserQrDialog {
         close.setDisable(busy);
     }
 
+    @FXML
     private void requestClose() { if (canClose()) stage.close(); }
 
     private boolean canClose() {
@@ -305,13 +294,6 @@ public final class UserQrDialog {
         clearImage();
         // Normal UI close is blocked while busy; forced app shutdown never retries a write.
         worker.shutdown();
-    }
-
-    private static Label text(String text, String style) {
-        Label label = new Label(text);
-        label.setWrapText(true);
-        label.getStyleClass().add(style);
-        return label;
     }
 
     private static void requireFxThread() {

@@ -19,7 +19,12 @@ public final class DatabaseConnection {
     public static Connection getConnection() throws SQLException {
         final Dotenv dotenv;
         try {
-            dotenv = Dotenv.configure().ignoreIfMissing().load();
+            var configuration = Dotenv.configure().ignoreIfMissing();
+            // A packaged app need not start with its executable folder as cwd.
+            // The Windows launcher supplies its own explicit config directory.
+            String directory = System.getProperty("bookit.configDir");
+            if (directory != null && !directory.isBlank()) configuration.directory(directory);
+            dotenv = configuration.load();
         } catch (RuntimeException error) {
             // A dotenv parse exception can contain the bad line, including secrets.
             throw new SQLException("Database configuration could not be loaded. Check the .env file.", "08001");

@@ -17,6 +17,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import javafx.beans.property.BooleanProperty;
@@ -67,6 +68,7 @@ public final class UserDashboardController implements DashboardView {
     private final ReservationService reservations;
     private final MemberFineService fines;
     private final MemberProfileService profiles;
+    private final LoanRenewalService renewals;
     private final FxDataLoader dataLoader = new FxDataLoader();
     // Page-read cancellation must never cancel a reservation/profile transaction.
     private final FxDataLoader writes = new FxDataLoader();
@@ -82,6 +84,12 @@ public final class UserDashboardController implements DashboardView {
     private boolean profileDirty;
     private boolean profileRefreshRequired;
     private String profileRecoveryMessage;
+    private LoansData loanSnapshot;
+    private boolean renewalRefreshRequired;
+    private String pendingRenewalRequest;
+    private String pendingRenewalLoan;
+    private String renewalRecoveryMessage;
+    private String renewalMessage;
     private Window guardedWindow;
     private final javafx.event.EventHandler<WindowEvent> closingGuard = event -> {
         if (saving.get() || !discardProfileDraft()) event.consume();
@@ -111,10 +119,18 @@ public final class UserDashboardController implements DashboardView {
     /** Test/controller-factory seam; construction never opens a connection. */
     public UserDashboardController(LibraryRepository repository, ReservationService reservations,
                                    MemberFineService fines, MemberProfileService profiles) {
+        this(repository, reservations, fines, profiles, new LoanRenewalService());
+    }
+
+    /** Injectable services keep tests offline; construction does not query MySQL. */
+    public UserDashboardController(LibraryRepository repository, ReservationService reservations,
+                                   MemberFineService fines, MemberProfileService profiles,
+                                   LoanRenewalService renewals) {
         this.repository = Objects.requireNonNull(repository, "repository");
         this.reservations = Objects.requireNonNull(reservations, "reservations");
         this.fines = Objects.requireNonNull(fines, "fines");
         this.profiles = Objects.requireNonNull(profiles, "profiles");
+        this.renewals = Objects.requireNonNull(renewals, "renewals");
     }
 
     @FXML
@@ -151,6 +167,7 @@ public final class UserDashboardController implements DashboardView {
         unconfirmedExplanation = null;
         successMessage = null;
         clearProfileState();
+        clearRenewalState();
         accountNameLabel.setText(user.username());
         showPage(currentPage);
     }
@@ -166,6 +183,7 @@ public final class UserDashboardController implements DashboardView {
         successMessage = null;
         unconfirmedExplanation = null;
         clearProfileState();
+        clearRenewalState();
         contentBox.getChildren().clear();
         accountNameLabel.setText("Signed out");
         pageTitleLabel.setText("Signed out");
@@ -194,6 +212,7 @@ public final class UserDashboardController implements DashboardView {
         profileSnapshot = null;
         profileDirty = false;
         currentPage = name;
+        loanSnapshot = null;
         navigationButtons.forEach((title, navigationButton) -> {
             navigationButton.getStyleClass().remove("nav-active");
             if (title.equals(name)) navigationButton.getStyleClass().add("nav-active");
@@ -214,6 +233,10 @@ public final class UserDashboardController implements DashboardView {
         }
         if (profileRefreshRequired && "My profile & QR".equals(name)) {
             showProfileRecovery();
+            return;
+        }
+        if (renewalRefreshRequired && "My loans".equals(name)) {
+            showRenewalRecovery();
             return;
         }
         switch (name) {
@@ -361,32 +384,89 @@ public final class UserDashboardController implements DashboardView {
         mutate("Reservation created", () -> reservations.reserve(actor, book.bookId()));
     }
 
+    private record LoansData(List<LibraryLoan> loans, List<LoanRenewal> renewals) {}
+
+    private LoansData readLoans(AuthenticatedUser actor) throws SQLException {
+        // Two read snapshots are advisory only. The write rechecks all policy
+        // rows and the exact old due date in a locked database transaction.
+        return new LoansData(List.copyOf(repository.findMyLoans(actor)),
+                List.copyOf(renewals.findMyRenewals(actor)));
+    }
+
     private void loadLoans() {
         AuthenticatedUser actor = signedInUser;
         pageSubtitleLabel.setText("Your current borrowing and returned-book history. " + zoneNote());
-        load("Loading your loans…", () -> List.copyOf(repository.findMyLoans(actor)), this::renderLoans);
+        load("Loading your loans and renewal history…", () -> readLoans(actor), this::renderLoans);
     }
 
-    private void renderLoans(List<LibraryLoan> loans) {
+    private void renderLoans(LoansData data) {
+        loanSnapshot = data;
+        List<LibraryLoan> loans = data.loans();
         Instant now = Instant.now();
         List<LibraryLoan> active = loans.stream().filter(LibraryLoan::isOpen).toList();
         List<LibraryLoan> returned = loans.stream().filter(loan -> !loan.isOpen()).toList();
         long overdue = active.stream().filter(loan -> loan.isOverdue(now)).count();
+        var renewed = data.renewals().stream().map(LoanRenewal::loanId)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        TableView<ObservableList<String>> current = table(
+                new String[]{"Loan ID", "Book", "Copy barcode", "Due date", "Status", "Renewal"},
+                active.stream().map(loan -> new String[]{
+                    loan.loanId(), display(loan.bookTitle()), display(loan.barcode()),
+                    format(loan.dueAt()), loan.status(now),
+                    renewed.contains(loan.loanId()) ? "Used (1 / 1)" : "Not used"
+                }).toArray(String[][]::new));
+        current.setId("memberLoanTable");
+        current.setPrefHeight(300);
+        // Keep the decision-relevant deadline readable at the 1024px minimum
+        // window width; long titles retain the shared full-text tooltip.
+        double[] loanWidths = {60, 190, 100, 145, 80, 95};
+        for (int i = 0; i < loanWidths.length; i++) {
+            var column = current.getColumns().get(i);
+            column.setPrefWidth(loanWidths[i]);
+            column.setMinWidth(i == 1 ? 110 : loanWidths[i]);
+            if (i != 1) column.setMaxWidth(loanWidths[i]);
+        }
+        current.setPlaceholder(label(active.isEmpty() ? "You have no current loans."
+                : "No loans match your search.", "muted"));
+        FilteredList<ObservableList<String>> filtered = new FilteredList<>(
+                FXCollections.observableArrayList(current.getItems()));
+        SortedList<ObservableList<String>> sorted = new SortedList<>(filtered);
+        sorted.comparatorProperty().bind(current.comparatorProperty());
+        current.setItems(sorted);
+        TextField search = new TextField();
+        search.setId("memberLoanSearch");
+        search.setPromptText("Search your current loans…");
+        search.setAccessibleText("Search your current loans by title, loan ID or copy barcode");
+        search.getStyleClass().add("search-field");
+        HBox.setHgrow(search, Priority.ALWAYS);
+        search.textProperty().addListener((observable, before, after) -> {
+            String query = after.strip().toLowerCase(Locale.ROOT);
+            filtered.setPredicate(loan -> loan.stream()
+                    .anyMatch(value -> value.toLowerCase(Locale.ROOT).contains(query)));
+        });
+        Button renew = button("Renew selected loan", "primary-button", () -> {
+            ObservableList<String> selected = current.getSelectionModel().getSelectedItem();
+            if (selected == null) return;
+            active.stream().filter(loan -> loan.loanId().equals(selected.get(0)))
+                    .findFirst().ifPresent(loan -> renewLoan(data, loan));
+        });
+        renew.setId("memberLoanRenew");
+        renew.setDisable(true);
+        // The displayed clock/status is not authorization. Only the service's
+        // server clock and current fine/reservation reads decide eligibility.
+        current.getSelectionModel().selectedItemProperty().addListener((observable, before, selected) ->
+                renew.setDisable(selected == null || renewed.contains(selected.get(0))));
+        Button refresh = refreshButton();
+        refresh.setId("memberLoanRefresh");
+        addRenewalNotice(true);
 
         contentBox.getChildren().addAll(
                 row(stat("ACTIVE LOANS", String.valueOf(active.size()), "Copies not yet returned", "blue"),
                     stat("OVERDUE", String.valueOf(overdue), "Open loans past their due time", "orange"),
                     stat("RETURNED", String.valueOf(returned.size()), "Completed loans in your account", "green")),
                 section("Current borrowing", "Only records for your authenticated member ID are loaded. " + zoneNote(),
-                        refreshButton(),
-                        searchableTable("Search your current loans…",
-                                new String[]{"Loan ID", "Book", "Copy barcode", "Borrowed", "Due date", "Status"},
-                                active.stream().map(loan -> new String[]{
-                                    String.valueOf(loan.loanId()), display(loan.bookTitle()), display(loan.barcode()),
-                                    format(loan.borrowedAt()), format(loan.dueAt()), loan.status(now)
-                                }).toArray(String[][]::new), false),
-                        unavailable("Request renewal", "Renewals and library policy checks are not connected yet."),
-                        note("Renewal requests are not enabled. Ask the library desk if you need more time.")),
+                        new HBox(12, search, refresh), current, renew,
+                        note("One renewal per loan adds 7 days to its current due date. You must renew before the deadline, have no positive unpaid fines, and have no other member waiting for this title. The database checks these rules when you confirm.")),
                 section("Borrowing history", "Loans that have a recorded return time. " + zoneNote(),
                         searchableTable("Search returned loans…",
                                 new String[]{"Loan ID", "Book", "Copy barcode", "Borrowed", "Due date", "Returned", "Status"},
@@ -394,7 +474,120 @@ public final class UserDashboardController implements DashboardView {
                                     String.valueOf(loan.loanId()), display(loan.bookTitle()), display(loan.barcode()),
                                     format(loan.borrowedAt()), format(loan.dueAt()), format(loan.returnedAt()), loan.status(now)
                                 }).toArray(String[][]::new), false)),
-                note("An empty table means no matching records were returned; database failures are shown separately, not as empty loans."));
+                section("Renewal history", "Saved receipts for your member account. " + zoneNote(),
+                        table(new String[]{"Loan ID", "Book", "Copy barcode", "Previous due", "New due", "Renewed"},
+                                data.renewals().stream().map(receipt -> new String[]{
+                                    receipt.loanId(), display(receipt.bookTitle()), display(receipt.barcode()),
+                                    format(receipt.previousDueAt()), format(receipt.newDueAt()), format(receipt.renewedAt())
+                                }).toArray(String[][]::new))),
+                note("An empty table means no matching records were returned; database failures are shown separately, not as empty loans. Refresh after staff change a loan."));
+    }
+
+    private void renewLoan(LoansData expected, LibraryLoan loan) {
+        if (!canRenew(expected, loan)) return;
+        AuthenticatedUser actor = signedInUser;
+        LocalDateTime proposed;
+        try { proposed = loan.dueAt().plusDays(7); }
+        catch (java.time.DateTimeException invalidDate) { return; }
+        if (!confirm("Renew this loan", "Renew \"" + display(loan.bookTitle()) + "\" (loan "
+                + loan.loanId() + ")?\n\nCurrent due: " + format(loan.dueAt())
+                + "\nNew due: " + format(proposed) + "\n" + zoneNote()
+                + "\n\nThis uses the one renewal allowed for this loan. It adds 7 days to the current due date, not today."
+                + " The loan must still be before its deadline, you must have no positive unpaid fines,"
+                + " and no other member may be waiting for this title. The database rechecks these rules.")) return;
+        // A modal runs a nested event loop: a stale detached button must not
+        // write after account replacement, navigation, logout, or another save.
+        if (actor != signedInUser || !canRenew(expected, loan)) return;
+        String request = UUID.randomUUID().toString();
+        pendingRenewalRequest = request;
+        pendingRenewalLoan = loan.loanId();
+        renewalMessage = null;
+        dataLoader.cancel();
+        saving.set(true);
+        setDataMode("SAVING… DO NOT CLOSE", "loading-badge");
+        pageSubtitleLabel.setText("Saving your renewal. Wait for confirmation before leaving BookIt.");
+        writes.load(() -> Objects.requireNonNull(
+                renewals.renew(actor, loan.loanId(), loan.dueAt(), request), "renewal receipt"), receipt -> {
+            if (disposed || actor != signedInUser) return;
+            saving.set(false);
+            renewalRefreshRequired = false;
+            pendingRenewalRequest = null;
+            pendingRenewalLoan = null;
+            renewalRecoveryMessage = null;
+            renewalMessage = renewalReceiptMessage(receipt);
+            showPage("My loans");
+        }, failure -> {
+            if (disposed || actor != signedInUser) return;
+            saving.set(false);
+            logDatabaseFailure(failure);
+            loanSnapshot = null;
+            renewalRefreshRequired = true;
+            renewalRecoveryMessage = failure instanceof LoanRenewalService.RejectedException rejected
+                    ? rejected.getMessage()
+                    : "The database could not confirm whether this renewal completed. Refresh your loans and renewal history before another renewal.";
+            contentBox.getChildren().clear();
+            showRenewalRecovery();
+        });
+    }
+
+    private boolean canRenew(LoansData expected, LibraryLoan loan) {
+        return !saving.get() && !disposed && signedInUser != null && !renewalRefreshRequired
+                && "My loans".equals(currentPage) && loanSnapshot == expected && loan.isOpen()
+                && expected.loans().contains(loan) && expected.renewals().stream()
+                        .noneMatch(receipt -> receipt.loanId().equals(loan.loanId()));
+    }
+
+    private static String renewalReceiptMessage(LoanRenewal receipt) {
+        return "Renewal saved for loan " + receipt.loanId() + ". New due: " + format(receipt.newDueAt())
+                + ". Request " + receipt.requestId() + ".";
+    }
+
+    private void addRenewalNotice(boolean consume) {
+        if (!"My loans".equals(currentPage) || renewalMessage == null) return;
+        Label notice = label(renewalMessage, "section-note");
+        notice.setId("memberLoanFeedback");
+        contentBox.getChildren().add(0, section("Renewal result", null, notice));
+        if (consume) renewalMessage = null;
+    }
+
+    private void showRenewalRecovery() {
+        setDataMode("RENEWAL NEEDS REFRESH", "offline-badge");
+        pageSubtitleLabel.setText("Review your loans and saved renewal receipts before another renewal.");
+        Button refresh = button("Refresh", "primary-button", this::refreshRenewalAfterFailure);
+        refresh.setId("memberLoanRefresh");
+        contentBox.getChildren().setAll(section("Renewal needs review", null,
+                label(renewalRecoveryMessage, "error-note"),
+                note("No renewal is repeated automatically. Refresh only reads your current loans and renewal history, including the request receipt if the save completed."), refresh));
+    }
+
+    private void refreshRenewalAfterFailure() {
+        if (saving.get() || disposed || signedInUser == null || !renewalRefreshRequired
+                || !"My loans".equals(currentPage)) return;
+        AuthenticatedUser actor = signedInUser;
+        load("Checking your saved loans and renewal receipts…", () -> readLoans(actor), data -> {
+            LoanRenewal saved = data.renewals().stream()
+                    .filter(receipt -> Objects.equals(receipt.requestId(), pendingRenewalRequest)
+                            && Objects.equals(receipt.loanId(), pendingRenewalLoan))
+                    .findFirst().orElse(null);
+            renewalMessage = saved == null
+                    ? "No matching renewal receipt was found in the refreshed history. Review your current due dates before starting a new request."
+                    : renewalReceiptMessage(saved);
+            renewalRefreshRequired = false;
+            pendingRenewalRequest = null;
+            pendingRenewalLoan = null;
+            renewalRecoveryMessage = null;
+            pageSubtitleLabel.setText("Your current borrowing and returned-book history. " + zoneNote());
+            renderLoans(data);
+        });
+    }
+
+    private void clearRenewalState() {
+        loanSnapshot = null;
+        renewalRefreshRequired = false;
+        pendingRenewalRequest = null;
+        pendingRenewalLoan = null;
+        renewalRecoveryMessage = null;
+        renewalMessage = null;
     }
 
     private <T> void load(String loadingText, Callable<T> query, Consumer<T> render) {
@@ -403,6 +596,7 @@ public final class UserDashboardController implements DashboardView {
                 label(loadingText, "loading-note")));
         if (successMessage != null) contentBox.getChildren().add(0,
                 section("Saved successfully", null, label(successMessage, "section-note")));
+        addRenewalNotice(false);
         dataLoader.load(query, result -> {
             contentBox.getChildren().clear();
             setDataMode("DATABASE", "live-badge");
@@ -419,6 +613,7 @@ public final class UserDashboardController implements DashboardView {
                     note("No sample records are substituted. This read did not change database records.")));
             if (successMessage != null) contentBox.getChildren().add(0,
                     section("Saved successfully", null, label(successMessage, "section-note")));
+            addRenewalNotice(false);
         });
     }
 
@@ -441,6 +636,7 @@ public final class UserDashboardController implements DashboardView {
 
     private void retryCurrentPage() {
         if (needsReservationRecovery()) refreshUnconfirmedAction();
+        else if (renewalRefreshRequired && "My loans".equals(currentPage)) refreshRenewalAfterFailure();
         else if (profileRefreshRequired && "My profile & QR".equals(currentPage)) refreshProfileAfterSaveFailure();
         else showPage(currentPage);
     }
@@ -677,7 +873,7 @@ public final class UserDashboardController implements DashboardView {
                         + " Summary totals include all your loaded records, regardless of filters.",
                         new HBox(12, search, statusFilter, refresh), count, history, details),
                 note("Amounts use your library's recorded currency units. This is a current record snapshot, not a receipt or a transaction ledger. Pay at the library desk; only staff can record a payment or waiver. Partial payments and online payments are not supported."),
-                note("These balances include recorded charges only. Overdue loans do not automatically generate fines here, and no daily fine rate is assumed. Refresh after staff make a change."));
+                note("Automatic overdue fines are PHP 20 per calendar day in Asia/Manila, starting the day after the due date, with no grace days or policy maximum. They stop on the return date. Checks run while an admin dashboard is open and catch up when it next opens. These are saved charges, not a live estimate; refresh after staff make a change."));
     }
 
     private VBox fineStat(String title, BigDecimal amount, String detail, String accent, String id) {

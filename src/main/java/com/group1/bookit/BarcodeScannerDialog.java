@@ -18,6 +18,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -28,16 +29,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.imageio.ImageIO;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -50,9 +50,11 @@ public final class BarcodeScannerDialog {
             DecodeHintType.POSSIBLE_FORMATS, List.of(BarcodeFormat.CODE_128),
             DecodeHintType.TRY_HARDER, Boolean.TRUE);
     private final Stage stage = new Stage();
-    private final ImageView preview = new ImageView();
-    private final Label status = new Label("Opening camera...");
-    private final Button cancel = new Button("Cancel");
+    @FXML private ImageView preview;
+    @FXML private StackPane previewFrame;
+    @FXML private Rectangle previewClip;
+    @FXML private Label status;
+    @FXML private Button cancel;
     private final AtomicBoolean framePending = new AtomicBoolean();
     private final FrameSourceFactory sourceFactory;
     private final Window owner;
@@ -76,12 +78,12 @@ public final class BarcodeScannerDialog {
         stage.initModality(owner == null ? Modality.APPLICATION_MODAL : Modality.WINDOW_MODAL);
         stage.setTitle("BookIt - Book copy barcode");
         stage.setMinWidth(560);
-        stage.setMinHeight(420);
-        stage.setScene(buildScene());
+        // Leave room for wrapped instructions/errors without hiding the close button.
+        stage.setMinHeight(520);
+        stage.setScene(loadScene());
         stage.setOnShown(event -> start());
         stage.setOnHidden(event -> {
             stopped = true;
-            if (worker != null) worker.interrupt();
             if (owner != null) owner.removeEventHandler(WindowEvent.WINDOW_HIDDEN, ownerHidden);
             // The worker's finally owns native close, including after a delayed open.
         });
@@ -94,86 +96,47 @@ public final class BarcodeScannerDialog {
         return result;
     }
 
-    private Scene buildScene() {
-        Label title = new Label("Book copy barcode");
-        title.setStyle(
-                "-fx-font-size: 24px;"
-                + "-fx-font-weight: bold;"
-                + "-fx-text-fill: #142c46;"
-        );
+    private Scene loadScene() {
+        URL location = getClass().getResource("/com/group1/bookit/BarcodeScanner.fxml");
+        if (location == null) {
+            throw new IllegalStateException("BarcodeScanner.fxml is missing from the application resources.");
+        }
+        FXMLLoader loader = new FXMLLoader(location);
+        // FXML names the controller for editor support; retain this configured instance.
+        loader.setControllerFactory(type -> {
+            if (type != BarcodeScannerDialog.class) {
+                throw new IllegalStateException("BarcodeScanner.fxml must use BarcodeScannerDialog.");
+            }
+            return this;
+        });
+        try {
+            return new Scene(loader.load());
+        } catch (IOException error) {
+            throw new IllegalStateException("The barcode scanner layout could not be loaded.", error);
+        }
+    }
 
-        Label instruction = new Label(
-                "Show the CODE 128 label on the physical book copy. "
-                + "Keep the entire barcode and both ends visible."
-        );
-        instruction.setWrapText(true);
-        instruction.setMaxWidth(Double.MAX_VALUE);
-        instruction.setStyle(
-                "-fx-font-size: 15px; -fx-text-fill: #53677e;"
-        );
+    @FXML
+    private void initialize() {
+        // These bindings follow live window dimensions; layout and colors are in resources.
+        preview.fitWidthProperty().bind(previewFrame.widthProperty());
+        previewClip.widthProperty().bind(previewFrame.widthProperty());
+        previewClip.heightProperty().bind(previewFrame.heightProperty());
+    }
 
-        preview.setPreserveRatio(true);
-        preview.setViewport(null);
-        preview.setSmooth(true);
-
-        StackPane frame = new StackPane(preview);
-        frame.setMinSize(0, 210);
-        frame.setPrefSize(640, 300);
-        frame.setStyle(
-                "-fx-background-color: #142c46;"
-                + "-fx-background-radius: 12;"
-        );
-
-        // Fill the rectangle's width without stretching the image.
-        preview.fitWidthProperty().unbind();
-        preview.fitHeightProperty().unbind();
-
-        preview.fitWidthProperty().bind(frame.widthProperty());
-        preview.setFitHeight(0);
-
-        // Clip vertical overflow and keep rounded corners.
-        javafx.scene.shape.Rectangle clip =
-                new javafx.scene.shape.Rectangle();
-
-        clip.widthProperty().bind(frame.widthProperty());
-        clip.heightProperty().bind(frame.heightProperty());
-        clip.setArcWidth(24);
-        clip.setArcHeight(24);
-        frame.setClip(clip);
-
-        status.setWrapText(true);
-        status.setStyle("-fx-text-fill: #53677e;");
-
-        cancel.setCancelButton(true);
-        cancel.setOnAction(event -> stage.close());
-
-        HBox actions = new HBox(cancel);
-        actions.setAlignment(Pos.CENTER_RIGHT);
-
-        VBox root = new VBox(
-                14, title, instruction, frame, status, actions
-        );
-
-        VBox.setVgrow(frame, javafx.scene.layout.Priority.ALWAYS);
-
-        root.setPadding(new Insets(24));
-        root.setStyle(
-                "-fx-background-color: #f4f7fb;"
-                + "-fx-font-family: 'Segoe UI';"
-        );
-
-        return new Scene(root, 680, 510);
+    @FXML
+    private void handleCancel() {
+        stage.close();
     }
 
     private void start() {
-        worker = new Thread(this::readFrames, "BookIt copy barcode camera");
-        worker.setDaemon(true);
-        worker.start();
+        worker = CameraWorker.start(this::readFrames, "BookIt copy barcode camera");
     }
 
     private void readFrames() {
         FrameSource source = null;
         try {
+            if (stopped) return;
             source = sourceFactory.create();
             if (stopped) return;
             if (source == null || !source.open()) {
@@ -208,7 +171,7 @@ public final class BarcodeScannerDialog {
             unavailable();
         } finally {
             if (source != null) {
-                try { source.close(); } catch (Exception | LinkageError ignored) { }
+                CameraWorker.release(source::close);
             }
         }
     }
@@ -296,4 +259,3 @@ public final class BarcodeScannerDialog {
         void close() throws Exception;
     }
 }
-

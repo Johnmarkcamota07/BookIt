@@ -2,6 +2,14 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
+//
+//AccountSetup() = This method helps lock this specific tool so no one can make accidental copies of it.;
+//How it works: It acts like a lock on a blueprint, blocking the computer system from trying to build or duplicate this specific piece of the program.
+//Why is it used: It keeps the system clean and organized. Since this tool is just a one-time setup helper, there is no need for the system to ever create multiple copies of it running around in the background.
+//
+//main(String[] args) = This method helps create a brand new user or admin account securely from behind the scenes.;
+//How it works: First, it forces you to use a secure black text screen (a terminal) so nobody looking over your shoulder can see the password you are typing. It asks for your username, email, and name, checking to make sure you didn't leave anything blank or make it too short. After you type and confirm your password, it scrambles that password into a secret, unreadable code so even the computer doesn't know your real password. Finally, it saves all this information into the system's digital filing cabinet (the database) and instantly erases your real password from its short-term memory.
+//Why is it used: It is used as a secure, private way for the system owners to make the very first accounts. Because this specific app doesn't have a public "Sign Up Here" button for just anyone to use, the creators need this safe, manual way to add trusted staff or admins into the system.
 package com.group1.bookit;
 
 import java.io.Console;
@@ -9,7 +17,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.Arrays;
 
-/** One-time LOCAL developer/admin setup utility, not a public registration screen. */
+/** FOR ADMIN ACCOUNT CREATION ONLY: DI PWEDE MAKITA NG USER TO */
 public final class AccountSetup {
     private AccountSetup() {}
 

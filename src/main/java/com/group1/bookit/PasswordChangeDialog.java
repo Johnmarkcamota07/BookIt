@@ -5,22 +5,22 @@
 package com.group1.bookit;
 
 import com.group1.bookit.AuthenticationService.AuthenticatedUser;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -34,12 +34,13 @@ public final class PasswordChangeDialog {
     private final PasswordChangeService service;
     private final Consumer<Boolean> onBusy;
     private final Runnable onSignOut;
-    private final PasswordField current = new PasswordField();
-    private final PasswordField next = new PasswordField();
-    private final PasswordField confirmation = new PasswordField();
-    private final Button submit = new Button("Change password");
-    private final Button cancel = new Button("Cancel");
-    private final Label feedback = new Label();
+    @FXML private PasswordField current;
+    @FXML private PasswordField next;
+    @FXML private PasswordField confirmation;
+    @FXML private Button submit;
+    @FXML private Button cancel;
+    @FXML private Label feedback;
+    @FXML private Label accountLabel;
     private boolean busy;
     private boolean hostBusy;
     private boolean terminal;
@@ -53,8 +54,18 @@ public final class PasswordChangeDialog {
 
     public static void show(Window owner, AuthenticatedUser actor,
                             Consumer<Boolean> onBusy, Runnable onSignOut) {
-        new PasswordChangeDialog(owner, actor, new PasswordChangeService(),
-                onBusy, onSignOut).showAndWait();
+        requireFxThread();
+        try {
+            new PasswordChangeDialog(owner, actor, new PasswordChangeService(),
+                    onBusy, onSignOut).showAndWait();
+        } catch (UncheckedIOException error) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            if (owner != null) alert.initOwner(owner);
+            alert.setTitle("Change password unavailable");
+            alert.setHeaderText("The password screen could not be loaded.");
+            alert.setContentText("Check that PasswordChange.fxml and password-change.css are in the bookit resource folder, then Clean and Build.");
+            alert.showAndWait();
+        }
     }
 
     /** Package seam: construction does not connect to the database or hash a password. */
@@ -75,13 +86,16 @@ public final class PasswordChangeDialog {
         if (owner != null) {
             stage.initOwner(owner);
             stage.initModality(Modality.WINDOW_MODAL);
-            owner.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, ownerClosing);
-            owner.addEventHandler(WindowEvent.WINDOW_HIDDEN, ownerHidden);
         } else stage.initModality(Modality.APPLICATION_MODAL);
         stage.setTitle("BookIt - Change password");
         stage.setMinWidth(380);
         stage.setMinHeight(380);
-        stage.setScene(buildScene());
+        stage.setScene(loadScene());
+        // A failed FXML load must not leave a dialog retained by its owner's listeners.
+        if (owner != null) {
+            owner.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, ownerClosing);
+            owner.addEventHandler(WindowEvent.WINDOW_HIDDEN, ownerHidden);
+        }
         stage.setOnCloseRequest(event -> { if (busy) event.consume(); });
         stage.setOnHidden(event -> dispose());
         stage.getScene().addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
@@ -90,9 +104,6 @@ public final class PasswordChangeDialog {
                 requestClose();
             }
         });
-        submit.setOnAction(event -> submit());
-        cancel.setOnAction(event -> requestClose());
-        submit.setDefaultButton(true);
         updateControls();
     }
 
@@ -100,52 +111,31 @@ public final class PasswordChangeDialog {
     void showAndWait() { requireFxThread(); if (!disposed) stage.showAndWait(); }
     void show() { requireFxThread(); if (!disposed) stage.show(); }
 
-    private Scene buildScene() {
-        current.setId("passwordCurrent");
-        current.setPromptText("Current password");
-        next.setId("passwordNew");
-        next.setPromptText("At least 15 characters");
-        confirmation.setId("passwordConfirm");
-        confirmation.setPromptText("Enter the new password again");
-        submit.setId("passwordSubmit");
-        cancel.setId("passwordCancel");
-        feedback.setId("passwordFeedback");
-        feedback.setWrapText(true);
-        feedback.getStyleClass().add("muted");
-        feedback.setMinHeight(Label.USE_PREF_SIZE);
-        VBox fields = new VBox(8,
-                label("Current password", "muted"), current,
-                label("New password", "muted"), next,
-                label("Confirm new password", "muted"), confirmation);
-        fields.getStyleClass().add("section-card");
-        VBox body = new VBox(16,
-                label("Change password", "page-title"),
-                label("Account: " + actor.username(), "muted"),
-                label("Use 15 to 1,024 characters. Spaces are allowed and are not trimmed. "
-                        + "Choose a password you do not use elsewhere.", "section-note"),
-                fields,
-                label("A successful change revokes your saved library QR and signs you out of this BookIt window. "
-                        + "Sign in with the new password; members can then generate a new QR.", "section-note"),
-                feedback);
-        body.setPadding(new Insets(22));
-        body.setStyle("-fx-background-color: #f4f7fb;");
-        ScrollPane scroll = new ScrollPane(body);
-        scroll.setFitToWidth(true);
-        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        HBox actions = new HBox(10, cancel, submit);
-        actions.setAlignment(Pos.CENTER_RIGHT);
-        actions.setPadding(new Insets(12, 22, 18, 22));
-        BorderPane root = new BorderPane(scroll);
-        root.setBottom(actions);
-        root.setStyle("-fx-background-color: #f4f7fb;");
-        submit.getStyleClass().add("primary-button");
-        cancel.getStyleClass().add("secondary-button");
-        Scene scene = new Scene(root, 570, 650);
-        var css = PasswordChangeDialog.class.getResource("/com/group1/bookit/bookit-dashboard.css");
-        if (css != null) scene.getStylesheets().add(css.toExternalForm());
-        return scene;
+    private Scene loadScene() {
+        URL location = PasswordChangeDialog.class.getResource("/com/group1/bookit/PasswordChange.fxml");
+        if (location == null) {
+            throw new UncheckedIOException(new IOException("PasswordChange.fxml is missing from the application resources."));
+        }
+        FXMLLoader loader = new FXMLLoader(location);
+        loader.setControllerFactory(type -> {
+            if (type != PasswordChangeDialog.class) {
+                throw new IllegalStateException("PasswordChange.fxml must use PasswordChangeDialog.");
+            }
+            return this;
+        });
+        try {
+            return new Scene(loader.load());
+        } catch (IOException error) {
+            throw new UncheckedIOException("The password-change layout could not be loaded.", error);
+        }
     }
 
+    @FXML
+    private void initialize() {
+        accountLabel.setText("Account: " + actor.username());
+    }
+
+    @FXML
     private void submit() {
         if (busy || terminal || disposed) return;
         char[] oldPassword = current.getText().toCharArray();
@@ -228,6 +218,7 @@ public final class PasswordChangeDialog {
         updateControls();
     }
 
+    @FXML
     private void requestClose() { if (!busy && !disposed) stage.close(); }
 
     private void updateControls() {
@@ -277,14 +268,6 @@ public final class PasswordChangeDialog {
 
     private static void wipe(char[]... values) {
         for (char[] value : values) if (value != null) Arrays.fill(value, '\0');
-    }
-
-    private static Label label(String text, String css) {
-        Label result = new Label(text);
-        result.setWrapText(true);
-        result.setMinHeight(Label.USE_PREF_SIZE);
-        result.getStyleClass().add(css);
-        return result;
     }
 
     private static void requireFxThread() {

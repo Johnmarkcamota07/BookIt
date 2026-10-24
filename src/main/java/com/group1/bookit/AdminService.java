@@ -1,3 +1,203 @@
+//AdminService() = This method helps prepare the main background worker that talks to the library's database.;
+//How it works: It sets up the standard communication line so the application can ask the computer's digital filing cabinet (the database) to save or retrieve information.
+//Why is it used: It acts as the default starting point to ensure the application is connected to the storage system before it tries to read or write any library records.
+//
+//AdminService(LibraryRepository.ConnectionProvider connections) = This method helps prepare the background worker using a specific, custom connection.;
+//How it works: Instead of using the default communication line, it accepts a specially provided connection tool and uses that to talk to the database.
+//Why is it used: It is mostly used by programmers to safely test the application without messing up the real, live library database.
+//
+//load(AuthenticatedUser actor, String page) = This method helps gather all the data needed to display a specific page on the administrator dashboard.;
+//How it works: It verifies that the person asking is a real administrator, checks which page they clicked (like "Members" or "Overview"), and pulls all the relevant summary numbers and spreadsheet lists for that exact page.
+//Why is it used: It fetches all the necessary information in one quick trip so the dashboard can draw the screen instantly for the user.
+//
+//copies(AuthenticatedUser actor, String bookId) = This method helps find every physical copy of a specific book title.;
+//How it works: It looks up a specific book (like "Harry Potter") and retrieves a list showing every individual physical copy the library owns, including their barcodes and whether they are currently on the shelf or borrowed.
+//Why is it used: It allows the librarian to see exactly how many copies they have of a specific title and manage the physical inventory.
+//
+//copyLabel(AuthenticatedUser actor, String copyId) = This method helps gather the exact details needed to print a barcode sticker for a book.;
+//How it works: It finds a specific physical book and grabs its title, ID, and barcode number, packaging them perfectly for a printer.
+//Why is it used: It allows the library to print physical stickers to place on book covers so they can be easily scanned later.
+//
+//findCopyByBarcode(AuthenticatedUser actor, String barcode) = This method helps look up a book simply by scanning it.;
+//How it works: It takes the scanned barcode, searches the digital filing cabinet for an exact match, and returns all the details about that specific physical book and who currently has it borrowed.
+//Why is it used: It saves the librarian from having to type out long book titles; they can just scan the book to instantly see its status.
+//
+//report(AuthenticatedUser actor, String type, LocalDate from, LocalDate to) = This method helps generate formal, printable reports of library activity.;
+//How it works: It asks the database to compile a list of activities—like all the books borrowed between two specific dates, or a snapshot of all unpaid fines—and formats it into a neat table.
+//Why is it used: It helps the library management track statistics, audit their inventory, and understand how the library is being used over time.
+//
+//execute(AuthenticatedUser actor, Action action, Map<String,String> values) = This method helps safely perform any major permanent change to the library's records.;
+//How it works: It takes a requested action (like checking out a book or paying a fine). It locks the necessary files so no one else can touch them, applies the change, and then writes a permanent audit diary entry noting exactly who made the change and what happened. If anything goes wrong midway, it cancels the whole process like it never happened.
+//Why is it used: It is the ultimate security guard for the database, ensuring no data is ever corrupted by computer glitches and no changes happen without a permanent paper trail.
+//
+//books(Connection c) = This method helps pull the master list of all book titles.;
+//How it works: It asks the database for every book title, merges in the authors' names, and counts up how many physical copies exist for each.
+//Why is it used: It builds the main "Books & copies" spreadsheet so the administrator can browse the entire catalog at once.
+//
+//loans(Connection c, boolean overdueOnly) = This method helps pull the master list of borrowed books.;
+//How it works: It retrieves all loan records, linking the borrower's name to the book's title. If asked, it filters the list to only show books that are currently late.
+//Why is it used: It builds the "Borrowing & returns" spreadsheet to track exactly where the library's physical inventory went.
+//
+//reservations(Connection c) = This method helps pull the list of books members are waiting for.;
+//How it works: It fetches all requests people have made to borrow a book, sorting them by who asked first, so a queue is formed.
+//Why is it used: It builds the "Reservations" spreadsheet so staff know which books need to be pulled off the shelves and held behind the desk.
+//
+//fines(Connection c) = This method helps pull the list of all money owed to the library.;
+//How it works: It retrieves every financial penalty issued to a member, showing the amount, the reason, and whether it has been paid yet.
+//Why is it used: It builds the "Fines" spreadsheet so administrators can track payments and hold members accountable for lost or late books.
+//
+//saveBook(Connection c, Map<String,String> v, boolean edit) = This method helps add a brand-new book title or fix the typos on an old one.;
+//How it works: It saves the book's title, publisher, and year into the system. It also checks if the authors exist yet; if they don't, it adds them, and then links them to the book.
+//Why is it used: It allows the library catalog to grow and ensures that book details remain accurate and up-to-date.
+//
+//addCopy(Connection c, Map<String,String> v) = This method helps register a brand-new physical book into the library.;
+//How it works: It links a physical book to a master title, assigns it a shelf location, and generates a unique, permanent barcode number for it.
+//Why is it used: It gives every physical object in the library a unique tracking number so it can be scanned and monitored.
+//
+//updateCopy(Connection c, Map<String,String> v) = This method helps change the status or shelf location of a physical book.;
+//How it works: It locks the book's record, checks to make sure the book isn't currently borrowed by someone, and then updates its status (for example, marking it as "LOST" or "MAINTENANCE").
+//Why is it used: It keeps the digital inventory accurately matched with what is physically sitting on the library shelves.
+//
+//createMember(Connection c, Map<String,String> v, String hash) = This method helps create a brand-new library account for a user.;
+//How it works: It takes the person's name, email, and a scrambled, secure version of their password, and saves them as an active member in the system.
+//Why is it used: It allows new patrons to join the library so they can start reserving and borrowing books.
+//
+//memberStatus(Connection c, Map<String,String> v, AuthenticatedUser actor) = This method helps turn a member's borrowing privileges on or off.;
+//How it works: It updates the member's profile to say either "ACTIVE" or "DISABLED". It also strictly prevents an administrator from accidentally disabling their own account.
+//Why is it used: It gives the library a way to block problem users (like people who steal books) without deleting their historical borrowing records.
+//
+//issue(Connection c, Map<String,String> v) = This method helps officially check out a book to a member.;
+//How it works: It scans the barcode, verifies the member is active, checks that the book isn't reserved for someone else, and starts a digital timer for the due date.
+//Why is it used: It transfers the physical responsibility of the book from the library to the member.
+//
+//issueReserved(Connection c, Map<String,String> v) = This method helps hand over a pre-requested book to a member.;
+//How it works: It verifies that the person picking up the book is the exact same person who reserved it, scans the specific physical book they are taking, starts the due date timer, and officially marks their reservation as fulfilled.
+//Why is it used: It safely transitions a book from "waiting behind the desk" to "borrowed," ensuring the right book goes to the right person.
+//
+//returnLoan(Connection c, Map<String,String> v, AuthenticatedUser actor) = This method helps check a book back into the library.;
+//How it works: It finds the open checkout record for a scanned barcode, stamps today's date on it as the return date, and triggers a quick check to finalize any late fees owed on it.
+//Why is it used: It tells the system that the physical book is safely back in the building and ready to be borrowed by someone else.
+//
+//reservationStatus(Connection c, Map<String,String> v) = This method helps change a book request's status.;
+//How it works: It updates a reservation. If the librarian marks it as "READY", it double-checks the shelves to make absolutely sure the library actually has a physical copy available to give to the member.
+//Why is it used: It is the workflow tool that helps librarians pull books off shelves and let members know their request is ready for pickup.
+//
+//charge(Connection c, Map<String,String> v) = This method helps create a manual money penalty.;
+//How it works: It finds a specific borrowed book and attaches a new "UNPAID" money fine to it, saving the reason why the admin charged them.
+//Why is it used: It allows the library to penalize members for things like returning a book with torn pages or water damage.
+//
+//changeFine(Connection c, Map<String,String> v, Action action, AuthenticatedUser actor) = This method helps adjust, forgive, or accept payment for a fine.;
+//How it works: It looks up the fine. Depending on the button the admin clicked, it updates the record to "PAID", changes it to "WAIVED", or simply changes the money amount. It refuses to accept payment for automatic late fees if the book hasn't been returned yet, because the fee is still growing.
+//Why is it used: It handles the entire financial accounting process, allowing the library to clear debts when members pay or show leniency when appropriate.
+//
+//validate(Action action, Map<String,String> v) = This method helps double-check all the answers typed into a form before saving them.;
+//How it works: It checks the specific rules for the action being taken. For example, if you are adding a book, it ensures the year is exactly four digits. If you are creating a member, it ensures the email has an "@" symbol.
+//Why is it used: It stops bad, typo-filled data from ever reaching the database, preventing glitches and errors later on.
+//
+//money(Map<String,String> v) = This method helps ensure a typed money amount is a valid currency format.;
+//How it works: It takes the typed text, checks that it isn't a negative number or absurdly huge, and ensures it has proper decimal places (like 20.00).
+//Why is it used: It prevents administrators from typing letters or weird symbols into financial boxes, which would crash the system's math calculations.
+//
+//expectedAmount(Map<String,String> v) = This method helps check the exact amount of money the system expects to be paid.;
+//How it works: It uses the same rules as the money() method to verify a hidden price tag passed by the form.
+//Why is it used: It ensures that if the administrator clicked "Pay 50", the fine hasn't secretly grown to 70 in the background before the payment goes through.
+//
+//storedMoney(String value) = This method helps safely read money values already stored in the system.;
+//How it works: It pulls a money amount out of the database and converts it into an exact mathematical number format.
+//Why is it used: It ensures the computer doesn't lose a penny due to rounding errors when reading financial records.
+//
+//authorNames(Map<String,String> v) = This method helps clean up a messy list of author names.;
+//How it works: It takes a typed sentence like "J.K. Rowling; Stephen King", splits it at the semicolons, trims away any extra spaces, and deletes any accidental duplicate names.
+//Why is it used: It allows an admin to quickly type multiple authors into one box, while ensuring the database files them separately and neatly.
+//
+//choice(Map<String,String> v, String key, String... options) = This method helps enforce the rules of a drop-down menu.;
+//How it works: It compares the word the administrator selected against a strict list of allowed words (like "ACTIVE" or "DISABLED"). If the word isn't on the list, it throws an error.
+//Why is it used: It prevents hackers from bypassing the form and forcing the database to accept an invalid, made-up status.
+//
+//text(Map<String,String> v, String key, int max, boolean required) = This method helps enforce the rules for normal text boxes.;
+//How it works: It removes accidental spaces at the edges of typed text. It then complains if the box was left blank when it shouldn't be, or if the user typed more characters than the database can hold.
+//Why is it used: It prevents the database from exploding because someone tried to paste an entire novel into a "First Name" box.
+//
+//blankNull(String v) = This method helps translate empty text boxes for the database.;
+//How it works: It checks if a word is entirely empty. If it is, it converts it into a special computer code (null) that means "absolutely nothing."
+//Why is it used: Databases prefer a clean null over an invisible empty space, saving storage and making searches more accurate.
+//
+//barcode(String value, boolean required) = This method helps ensure scanned barcodes are valid.;
+//How it works: It checks that the scanned barcode doesn't contain spaces, weird hidden symbols, or exceed the maximum length.
+//Why is it used: It prevents faulty barcode scanners or typos from breaking the physical inventory tracking system.
+//
+//id(String value, String label) = This method helps ensure ID numbers are valid and safe.;
+//How it works: It checks that an ID consists only of numbers and is a positive value.
+//Why is it used: It prevents errors where the system tries to look up a book using a word instead of a proper numeric ID.
+//
+//requireActor(AuthenticatedUser actor) = This method helps aggressively check the user's security badge.;
+//How it works: It looks at the current logged-in user and immediately stops the program if they are missing, lack the "ADMIN" badge, or have no username.
+//Why is it used: It is a critical security wall that absolutely guarantees no normal user or guest can accidentally run administrator tools.
+//
+//authorize(Connection c, AuthenticatedUser actor, boolean lock) = This method helps double-check the admin's security badge directly against the database.;
+//How it works: It reaches into the database to verify that the logged-in admin's account hasn't been deleted, demoted, or disabled by another admin in the last few minutes.
+//Why is it used: It prevents a fired employee whose screen is still on from doing damage, because their badge is checked at the vault door right before any change is made.
+//
+//open() = This method helps establish the secure communication tunnel to the storage vault.;
+//How it works: It asks the system for an open line to the database and verifies that the line successfully connected.
+//Why is it used: It is the necessary first step before the application can read or write any library data.
+//
+//lockBook(Connection c, long book) = This method helps prevent two people from editing the same book at the exact same time.;
+//How it works: It puts a temporary digital padlock on a specific book's row in the database.
+//Why is it used: If two administrators try to checkout the exact same book at the exact same millisecond, this lock forces them to form a line, preventing double-booking.
+//
+//named(Connection c, String table, String pk, String nameColumn, String value) = This method helps automatically organize things like categories or publishers.;
+//How it works: It looks for a category (like "Sci-Fi"). If "Sci-Fi" is already in the system, it grabs its ID number. If "Sci-Fi" doesn't exist yet, it adds it silently and returns the brand-new ID number.
+//Why is it used: It saves the administrator from having to go to a separate screen to create a new category before they can add a book.
+//
+//prepare(Connection c, String sql, Object... params) = This method helps safely prepare a command for the database.;
+//How it works: It creates a blank template of a database command and safely plugs the user's typed words into the blanks, preventing malicious code from tricking the database.
+//Why is it used: It is the standard defense against hackers trying to break into the database by typing code into a text box.
+//
+//bind(PreparedStatement s, Object... params) = This method helps attach the specific typed answers to the database command.;
+//How it works: It goes through the template blanks one by one and inserts the typed numbers or text into them, and sets a 12-second timeout so the system won't freeze forever if it gets stuck.
+//Why is it used: It is the mechanical step that marries the user's input to the secure database command before sending it.
+//
+//update(Connection c, String sql, Object... params) = This method helps send an instruction that alters data.;
+//How it works: It securely packages an instruction (like updating a name or deleting a row), sends it to the database, and returns the number of rows that were changed.
+//Why is it used: It is the universal tool used throughout the code to modify existing information in the digital filing cabinet.
+//
+//insert(Connection c, String sql, Object... params) = This method helps send an instruction that creates brand-new data.;
+//How it works: It securely packages an instruction to create a new record, sends it, and demands the database hand back the brand-new unique ID number it generated for that record.
+//Why is it used: When adding a new book or member, the application immediately needs to know the new ID number so it can link other things (like fines or loans) to it.
+//
+//query(Connection c, List headers, String sql, Object... params) = This method helps ask the database a question and organize the answer.;
+//How it works: It securely asks a question (like "show me all books"), goes through every single returned answer row by row, and builds a neat, matching grid of data.
+//Why is it used: It converts messy database results into clean, organized spreadsheets that the visual dashboard can easily display on the screen.
+//
+//dates(Table source, int... columns) = This method helps translate computer timestamps into human-readable local dates.;
+//How it works: It takes a spreadsheet table, looks at specific columns containing raw global time codes (UTC), and translates them into the local time zone format (like "2026-10-25 14:30").
+//Why is it used: It ensures that when a librarian looks at a checkout time, they see it in their own local clock time, not the global computer server time.
+//
+//utc(LocalDateTime local) = This method helps translate local time into a standard global time.;
+//How it works: It takes the librarian's current local time and converts it into UTC (Universal Time Coordinated) before saving it.
+//Why is it used: It ensures the database stores all times in one universal format, preventing massive confusion if the computer servers or users are in different time zones.
+//
+//scalar(Connection c, String sql, Object... params) = This method helps ask the database a question that only has a single word or number as an answer.;
+//How it works: It sends a specific counting or summarizing command (like "count all active users") and plucks out just that one resulting number.
+//Why is it used: It is a fast shortcut for getting the dashboard's summary numbers without having to download massive lists of data.
+//
+//exists(Connection c, String sql, Object... params) = This method helps ask the database a simple "Yes or No" question.;
+//How it works: It sends a search command and just checks if the database found anything at all, returning "true" if it did and "false" if it didn't.
+//Why is it used: It quickly checks rules, like "Does this person have any unpaid fines?", without wasting memory downloading the actual fine records.
+//
+//singleId(Connection c, String sql, Object param, String message) = This method helps look up exactly one ID number.;
+//How it works: It runs a search looking for a specific ID. If it finds it, it hands it back. If the ID doesn't exist, it stops the program and displays the specific error message provided.
+//Why is it used: It guarantees that when the system tries to look up a member or a book, the program will halt safely if that record was somehow deleted.
+//
+//row(Connection c, String sql, Object param, String message) = This method helps retrieve exactly one row of information.;
+//How it works: It asks the database for a specific single row of data (like one member's profile). If the row is missing, it instantly throws an error using the provided message.
+//Why is it used: It forces the program to stop and complain if it expects to find a vital piece of data but the database comes back empty-handed.
+//
+//optionalRow(Connection c, String sql, Object... params) = This method helps retrieve a row of information without panicking if it is missing.;
+//How it works: It asks the database for a single row. If it finds it, it organizes it and gives it back. If it doesn't find anything, it simply hands back a clean "nothing" (null) instead of throwing an error.
+//Why is it used: It is used for polite checks, like checking if someone is next in line for a reservation, where "nobody is in line" is a perfectly valid and normal answer.
+
 package com.group1.bookit;
 
 import com.group1.bookit.AuthenticationService.AuthenticatedUser;
@@ -207,10 +407,10 @@ public class AdminService {
                     case CREATE_MEMBER -> createMember(c,v,hash);
                     case SET_MEMBER_STATUS -> memberStatus(c,v,actor);
                     case ISSUE_LOAN -> issue(c,v);
-                    case RETURN_LOAN -> returnLoan(c,v);
+                    case RETURN_LOAN -> returnLoan(c,v,actor);
                     case SET_RESERVATION_STATUS -> reservationStatus(c,v);
                     case CHARGE_FINE -> charge(c,v);
-                    case ADJUST_FINE, RECORD_PAYMENT, WAIVE_FINE -> changeFine(c,v,action);
+                    case ADJUST_FINE, RECORD_PAYMENT, WAIVE_FINE -> changeFine(c,v,action,actor);
                 };
                 // Migration 02 is required: a missing audit table rolls back the
                 // main operation too; unaudited writes are never committed.
@@ -226,8 +426,14 @@ public class AdminService {
                 if (v.containsKey("reason")) details = text(v,"reason",500,true);
                 else if (v.containsKey("status")) details = "Status: " + v.get("status");
                 else if (v.containsKey("amount")) details = "Amount: " + money(v).toPlainString();
-                update(c,"INSERT INTO admin_audit(admin_id,action,target_type,target_id,details,created_at) VALUES(?,?,?,?,?,UTC_TIMESTAMP())",
+                boolean pickup=action==Action.ISSUE_LOAN && v.containsKey("reservationId");
+                if(pickup) details="Reservation pickup: reservation " + id(v.get("reservationId"),"Reservation ID")
+                        + "; loan " + result + "; member " + id(v.get("userId"),"User ID")
+                        + "; copy barcode " + barcode(v.get("barcode"),true)
+                        + "; due date " + v.get("dueDate") + " (Asia/Manila end of day)";
+                int audited=update(c,"INSERT INTO admin_audit(admin_id,action,target_type,target_id,details,created_at) VALUES(?,?,?,?,?,UTC_TIMESTAMP())",
                         id(actor.userId(),"Admin ID"),action.name(),target,result,details);
+                if(pickup && audited!=1) throw new SQLException("The reservation pickup audit was not recorded.");
                 c.commit();
                 return result;
             } catch (SQLException | RuntimeException failure) {
@@ -348,6 +554,7 @@ public class AdminService {
         return Long.toString(user);
     }
     private static String issue(Connection c,Map<String,String> v) throws SQLException {
+        if(v.containsKey("reservationId")) return issueReserved(c,v);
         String barcode=text(v,"barcode",50,true);
         long user=id(v.get("userId"),"User ID");
         List<String> info=row(c,"SELECT copy_id,book_id FROM book_copy WHERE barcode=?",barcode,"No copy has this barcode.");
@@ -368,14 +575,60 @@ public class AdminService {
         if(head!=null) update(c,"UPDATE reservation SET status='FULFILLED' WHERE reservation_id=?",id(head.get(0),"Reservation ID"));
         return Long.toString(loan);
     }
-    private static String returnLoan(Connection c,Map<String,String> v) throws SQLException {
+    /** A selected READY reservation is not a loan until physical handover is
+     * confirmed. Never substitute the next request when this selected one is stale. */
+    private static String issueReserved(Connection c,Map<String,String> v) throws SQLException {
+        long reservation=id(v.get("reservationId"),"Reservation ID");
+        long user=id(v.get("userId"),"User ID");
+        String code=barcode(v.get("barcode"),true);
+        // Routing reads only. Recheck the same row after the book/member/copy locks.
+        List<String> selected=row(c,"SELECT book_id,user_id FROM reservation WHERE reservation_id=?",
+                reservation,"This reservation is no longer available. Refresh reservations.");
+        long book=id(selected.get(0),"Book ID");
+        if(id(selected.get(1),"Member ID")!=user) throw new IllegalArgumentException("The selected member does not match this reservation. Refresh reservations.");
+        if(v.containsKey("expectedBookId") && id(v.get("expectedBookId"),"Book ID")!=book)
+            throw new IllegalArgumentException("The selected reservation's title changed. Refresh reservations.");
+        List<String> info=row(c,"SELECT copy_id,book_id FROM book_copy WHERE barcode=?",code,"No copy has this barcode.");
+        long copy=id(info.get(0),"Copy ID");
+        if(id(info.get(1),"Book ID")!=book) throw new IllegalArgumentException("This copy barcode belongs to a different title. Scan a copy of the reserved book.");
+        lockBook(c,book);
+        List<String> member=row(c,"SELECT role,status FROM app_user WHERE user_id=? FOR UPDATE",user,"Member not found.");
+        if(!member.equals(List.of("USER","ACTIVE"))) throw new IllegalArgumentException("Loans require an active regular member.");
+        List<String> physical=row(c,"SELECT status FROM book_copy WHERE copy_id=? AND barcode=? AND book_id=? FOR UPDATE",
+                List.of(copy,code,book),"The copy changed; refresh before confirming pickup.");
+        if(!"AVAILABLE".equals(physical.get(0)) || exists(c,"SELECT loan_id FROM loan WHERE copy_id=? AND returned_at IS NULL FOR UPDATE",copy))
+            throw new IllegalArgumentException("This copy is not available for borrowing.");
+        List<String> head=optionalRow(c,"SELECT reservation_id,user_id FROM reservation WHERE book_id=? AND status IN ('PENDING','READY') ORDER BY reserved_at,reservation_id LIMIT 1 FOR UPDATE",book);
+        if(head==null || id(head.get(0),"Reservation ID")!=reservation || id(head.get(1),"Member ID")!=user)
+            throw new IllegalArgumentException("This exact reservation is not at the front of the active queue. Refresh reservations; no loan was created.");
+        List<String> current=row(c,"SELECT book_id,user_id,status FROM reservation WHERE reservation_id=? FOR UPDATE",
+                reservation,"This reservation is no longer available. Refresh reservations.");
+        if(id(current.get(0),"Book ID")!=book || id(current.get(1),"Member ID")!=user || !"READY".equals(current.get(2)))
+            throw new IllegalArgumentException("Only the selected READY reservation can be picked up. Refresh reservations.");
+        LocalDateTime dueUtc=LocalDate.parse(v.get("dueDate")).atTime(23,59,59)
+                .atZone(ZoneId.of("Asia/Manila")).withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+        // One statement uses the authoritative server clock for both the start
+        // and the future-deadline guard. Opening a form/marking READY starts nothing.
+        long loan=insert(c,"INSERT INTO loan(copy_id,user_id,loaned_at,due_at) SELECT ?,?,UTC_TIMESTAMP(),? WHERE ?>UTC_TIMESTAMP()",
+                copy,user,dueUtc,dueUtc);
+        if(loan<1 || loan>4294967295L) throw new SQLException("The database returned an invalid loan ID.");
+        if(update(c,"UPDATE reservation SET status='FULFILLED' WHERE reservation_id=? AND book_id=? AND user_id=? AND status='READY'",
+                reservation,book,user)!=1) throw new SQLException("The selected reservation pickup was not saved.");
+        return Long.toString(loan);
+    }
+    private static String returnLoan(Connection c,Map<String,String> v,AuthenticatedUser actor) throws SQLException {
         long loan=id(v.get("loanId"),"Loan ID");
         List<String> info=row(c,"SELECT l.copy_id,bc.book_id FROM loan l JOIN book_copy bc ON bc.copy_id=l.copy_id WHERE l.loan_id=?",loan,"Loan not found.");
         lockBook(c,id(info.get(1),"Book ID"));
         row(c,"SELECT copy_id FROM book_copy WHERE copy_id=? FOR UPDATE",id(info.get(0),"Copy ID"),"Copy not found.");
         List<String> current=row(c,"SELECT returned_at FROM loan WHERE loan_id=? FOR UPDATE",loan,"Loan not found.");
         if(!current.get(0).isEmpty()) throw new IllegalArgumentException("This loan has already been returned.");
-        update(c,"UPDATE loan SET returned_at=UTC_TIMESTAMP() WHERE loan_id=? AND returned_at IS NULL",loan);
+        if(update(c,"UPDATE loan SET returned_at=UTC_TIMESTAMP() WHERE loan_id=? AND returned_at IS NULL",loan)!=1) {
+            throw new SQLException("The return did not update exactly one loan.");
+        }
+        // Assess inside this same return transaction, after locking the loan.
+        // Do not acquire a member lock here: renewals lock member -> loans.
+        FineAutomationService.assessLockedLoan(c,actor,loan);
         // Physical status is preserved. ON_LOAN is derived, not stored.
         return Long.toString(loan);
     }
@@ -408,13 +661,34 @@ public class AdminService {
         if(exists(c,"SELECT fine_id FROM fine WHERE loan_id=? FOR UPDATE",loan)) throw new IllegalArgumentException("A fine already exists for this loan; adjust its unpaid amount instead.");
         return Long.toString(insert(c,"INSERT INTO fine(loan_id,amount,payment_status) VALUES(?,?,'UNPAID')",loan,money(v)));
     }
-    private static String changeFine(Connection c,Map<String,String> v,Action action) throws SQLException {
+    private static String changeFine(Connection c,Map<String,String> v,Action action,AuthenticatedUser actor) throws SQLException {
         long fine=id(v.get("fineId"),"Fine ID");
-        List<String> record=row(c,"SELECT payment_status FROM fine WHERE fine_id=? FOR UPDATE",fine,"Fine not found.");
+        // Resolve before locking: all fine writers lock loan -> fine -> provenance.
+        long loan=singleId(c,"SELECT loan_id FROM fine WHERE fine_id=?",fine,"Fine not found.");
+        List<String> loanRecord=row(c,"SELECT returned_at FROM loan WHERE loan_id=? FOR UPDATE",loan,"Loan not found.");
+        List<String> record=row(c,"SELECT payment_status,amount,loan_id FROM fine WHERE fine_id=? FOR UPDATE",fine,"Fine not found.");
+        if(id(record.get(2),"Loan ID")!=loan) throw new SQLException("The fine's loan changed; refresh before retrying.");
         if(!"UNPAID".equals(record.get(0))) throw new IllegalArgumentException("Only unpaid fines may be changed. Paid and waived records are retained.");
         switch(action) {
-            case ADJUST_FINE -> update(c,"UPDATE fine SET amount=? WHERE fine_id=?",money(v),fine);
-            case RECORD_PAYMENT -> update(c,"UPDATE fine SET payment_status='PAID',paid_at=UTC_TIMESTAMP() WHERE fine_id=?",fine);
+            case ADJUST_FINE -> {
+                FineAutomationService.markManualOverride(c,fine);
+                update(c,"UPDATE fine SET amount=? WHERE fine_id=?",money(v),fine);
+            }
+            case RECORD_PAYMENT -> {
+                boolean automatic=FineAutomationService.isAutomaticLocked(c,fine);
+                if(automatic && loanRecord.get(0).isEmpty()) {
+                    throw new IllegalArgumentException("Return this book before recording payment of its automatic fine; the amount is still accruing.");
+                }
+                if(automatic) {
+                    if(!v.containsKey("expectedAmount")) throw new IllegalArgumentException("Refresh the fine amount before recording payment.");
+                    FineAutomationService.assessLockedLoan(c,actor,loan);
+                    record=row(c,"SELECT payment_status,amount,loan_id FROM fine WHERE fine_id=? FOR UPDATE",fine,"Fine not found.");
+                }
+                if(v.containsKey("expectedAmount") && expectedAmount(v).compareTo(storedMoney(record.get(1)))!=0) {
+                    throw new IllegalArgumentException("The fine amount changed. Refresh and confirm the current amount before recording payment.");
+                }
+                update(c,"UPDATE fine SET payment_status='PAID',paid_at=UTC_TIMESTAMP() WHERE fine_id=?",fine);
+            }
             case WAIVE_FINE -> update(c,"UPDATE fine SET payment_status='WAIVED',paid_at=NULL WHERE fine_id=?",fine);
             default -> throw new IllegalArgumentException("Unknown fine action.");
         }
@@ -444,17 +718,26 @@ public class AdminService {
             case SET_MEMBER_STATUS -> { id(v.get("userId"),"User ID"); choice(v,"status","ACTIVE","DISABLED"); }
             case ISSUE_LOAN -> {
                 id(v.get("userId"),"User ID"); text(v,"barcode",50,true);
+                boolean pickup=v.containsKey("reservationId");
+                if(pickup) {
+                    id(v.get("reservationId"),"Reservation ID");
+                    barcode(v.get("barcode"),true);
+                    if(v.containsKey("expectedBookId")) id(v.get("expectedBookId"),"Book ID");
+                }
                 try {
                     LocalDate due=LocalDate.parse(v.getOrDefault("dueDate",""));
-                    if(due.isBefore(LocalDate.now())) throw new IllegalArgumentException("Due date must be today or later.");
-                    if(due.getYear()>9999) throw new IllegalArgumentException("Due date must be within MySQL's supported calendar range.");
+                    if(!pickup && due.isBefore(LocalDate.now())) throw new IllegalArgumentException("Due date must be today or later.");
+                    if(due.getYear()<1000 || due.getYear()>9999) throw new IllegalArgumentException("Due date must be within MySQL's supported calendar range.");
                 } catch(java.time.format.DateTimeParseException e) { throw new IllegalArgumentException("Select a valid due date."); }
             }
             case RETURN_LOAN -> id(v.get("loanId"),"Loan ID");
             case SET_RESERVATION_STATUS -> { id(v.get("reservationId"),"Reservation ID"); choice(v,"status","READY","CANCELLED"); }
             case CHARGE_FINE -> { id(v.get("loanId"),"Loan ID"); money(v); text(v,"reason",500,true); }
             case ADJUST_FINE -> { id(v.get("fineId"),"Fine ID"); money(v); text(v,"reason",500,true); }
-            case RECORD_PAYMENT -> id(v.get("fineId"),"Fine ID");
+            case RECORD_PAYMENT -> {
+                id(v.get("fineId"),"Fine ID");
+                if(v.containsKey("expectedAmount")) expectedAmount(v);
+            }
             case WAIVE_FINE -> { id(v.get("fineId"),"Fine ID"); text(v,"reason",500,true); }
         }
     }
@@ -464,6 +747,13 @@ public class AdminService {
             if(amount.signum()<0 || amount.compareTo(new BigDecimal("99999999.99"))>0) throw new NumberFormatException();
             return amount;
         } catch(ArithmeticException|NumberFormatException e) { throw new IllegalArgumentException("Amount must be 0 to 99999999.99 with at most two decimal places."); }
+    }
+    private static BigDecimal expectedAmount(Map<String,String> v) {
+        return money(Map.of("amount",text(v,"expectedAmount",20,true)));
+    }
+    private static BigDecimal storedMoney(String value) throws SQLException {
+        try { return money(Map.of("amount",value)); }
+        catch(RuntimeException bad) { throw new SQLException("The stored fine amount is invalid."); }
     }
     private static List<String> authorNames(Map<String,String> v) {
         String names=text(v,"authors",4000,false);
@@ -499,11 +789,11 @@ public class AdminService {
         return id;
     }
     private static void requireActor(AuthenticatedUser actor) {
-        if(actor==null || !"ADMIN".equals(actor.role())) throw new IllegalArgumentException("An authenticated administrator is required.");
+        if(actor==null || !"ADMIN".equals(actor.role()) || actor.username()==null || actor.username().isBlank()) throw new IllegalArgumentException("An authenticated administrator is required.");
         id(actor.userId(),"Admin ID");
     }
     private static void authorize(Connection c,AuthenticatedUser actor,boolean lock) throws SQLException {
-        try(PreparedStatement s=prepare(c,"SELECT role,status FROM app_user WHERE user_id=?"+(lock?" FOR UPDATE":""),id(actor.userId(),"Admin ID")); ResultSet r=s.executeQuery()) {
+        try(PreparedStatement s=prepare(c,"SELECT role,status FROM app_user WHERE user_id=? AND username=?"+(lock?" FOR UPDATE":""),id(actor.userId(),"Admin ID"),actor.username()); ResultSet r=s.executeQuery()) {
             if(!r.next() || !"ADMIN".equals(r.getString(1)) || !"ACTIVE".equals(r.getString(2))) throw new IllegalArgumentException("Your administrator access is no longer active. Sign out and contact an administrator.");
         }
     }

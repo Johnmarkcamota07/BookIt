@@ -73,8 +73,8 @@ public class PasswordChangeService {
         if (current == null || current.length == 0 || current.length > 1024) {
             throw new IllegalArgumentException("Enter your current password (up to 1024 characters).");
         }
-        if (fresh == null || fresh.length < 15 || fresh.length > 1024) {
-            throw new IllegalArgumentException("Use a new password of 15 to 1024 characters.");
+        if (fresh == null || fresh.length < 8 || fresh.length > 1024) {
+            throw new IllegalArgumentException("Use a new password of 8 to 1024 characters.");
         }
         if (confirmed == null || !Arrays.equals(fresh, confirmed)) {
             throw new IllegalArgumentException("The new password and confirmation do not match.");
