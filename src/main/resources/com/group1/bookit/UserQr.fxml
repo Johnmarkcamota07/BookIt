@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.group1.bookit.UserQrDialog"
+            prefWidth="580.0" prefHeight="720.0" styleClass="user-qr-dialog"
+            stylesheets="@user-qr.css">
+    <center>
+        <ScrollPane fx:id="contentScroll" fitToWidth="true" hbarPolicy="NEVER">
+            <content>
+                <VBox spacing="14.0" styleClass="qr-dialog-content">
+                    <padding>
+                        <Insets top="22.0" right="22.0" bottom="22.0" left="22.0"/>
+                    </padding>
+                    <children>
+                        <Label text="MY LIBRARY QR" wrapText="true" minHeight="-Infinity"
+                               styleClass="qr-dialog-title"/>
+                        <Label fx:id="accountLabel" id="qrAccount" wrapText="true" minHeight="-Infinity"
+                               styleClass="qr-dialog-muted"/>
+                        <Label text="This is a reusable login credential, not your password. Anyone with a copy can use it. Keep the image private."
+                               wrapText="true" minHeight="-Infinity" styleClass="qr-dialog-note"/>
+                        <StackPane id="qrImageBox" minHeight="296.0" styleClass="qr-dialog-preview">
+                            <padding>
+                                <Insets top="8.0" right="8.0" bottom="8.0" left="8.0"/>
+                            </padding>
+                            <children>
+                                <ImageView fx:id="preview" id="qrPreview" fitWidth="280.0" fitHeight="280.0"
+                                           preserveRatio="true" smooth="false"/>
+                                <Label fx:id="placeholder" id="qrPlaceholder" text="Your QR will appear here"
+                                       styleClass="qr-dialog-placeholder"/>
+                            </children>
+                        </StackPane>
+                        <PasswordField fx:id="password" id="qrPassword" promptText="Enter your current password"
+                                       accessibleText="Confirm your current password to generate a QR"/>
+                        <CheckBox fx:id="consent" id="qrConsent"
+                                  text="I understand generating a new QR invalidates my previous QR immediately."
+                                  wrapText="true" minHeight="-Infinity"/>
+                        <HBox spacing="10.0">
+                            <children>
+                                <Button fx:id="generate" id="qrGenerate" text="Generate / replace QR"
+                                        onAction="#generate" disable="true" styleClass="qr-dialog-primary-button"/>
+                                <Button fx:id="save" id="qrSave" text="Save PNG" onAction="#chooseSave"
+                                        disable="true" styleClass="qr-dialog-secondary-button"/>
+                            </children>
+                        </HBox>
+                        <Label fx:id="status" id="qrStatus" text="No QR generated in this window yet."
+                               wrapText="true" minHeight="-Infinity" styleClass="qr-dialog-muted"/>
+                        <Label text="Save the PNG to keep it for future visits. Reopening this window cannot recover an earlier QR from its database hash."
+                               wrapText="true" minHeight="-Infinity" styleClass="qr-dialog-note"/>
+                    </children>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+    <bottom>
+        <HBox alignment="CENTER_RIGHT">
+            <padding>
+                <Insets top="10.0" right="22.0" bottom="16.0" left="22.0"/>
+            </padding>
+            <children>
+                <Button fx:id="close" id="qrClose" text="Close" onAction="#requestClose"
+                        styleClass="qr-dialog-secondary-button"/>
+            </children>
+        </HBox>
+    </bottom>
+</BorderPane>

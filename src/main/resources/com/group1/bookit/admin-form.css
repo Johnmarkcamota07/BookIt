@@ -1,0 +1,47 @@
+@import "bookit-dashboard.css";
+
+.admin-form-dialog {
+    -fx-background-color: #f3f6fb;
+    -fx-padding: 18px;
+}
+
+.admin-form-dialog .admin-form-help {
+    -fx-text-fill: #315c7a;
+    -fx-font-size: 13px;
+}
+
+.admin-form-dialog .scroll-pane,
+.admin-form-dialog .scroll-pane > .viewport {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.admin-form-dialog .admin-form-content {
+    -fx-padding: 4px;
+}
+
+.admin-form-dialog .admin-form-caption {
+    -fx-text-fill: #29475e;
+}
+
+.admin-form-dialog .admin-form-barcode {
+    -fx-spacing: 8px;
+    -fx-alignment: center-left;
+}
+
+.admin-form-dialog .button {
+    -fx-background-radius: 7px;
+    -fx-padding: 10px 16px;
+    -fx-min-height: 36px;
+}
+
+.admin-form-dialog .button:default {
+    -fx-background-color: #0d76b3;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.admin-form-dialog .button:default:hover {
+    -fx-background-color: #09699f;
+}
+

@@ -1,0 +1,252 @@
+.login-root {
+    -fx-background-color: white;
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 14px;
+    -fx-accent: #178ac8;
+    -fx-focus-color: #178ac8;
+    -fx-faint-focus-color: #178ac822;
+    -fx-padding: 0;
+}
+
+.login-root .login-split {
+    -fx-background-color: white;
+    -fx-padding: 0;
+}
+
+.login-root .login-brand-panel {
+    -fx-background-color: linear-gradient(to bottom right, #2867df, #143b9f, #0d246c);
+}
+
+.login-root .login-brand-copy-group {
+    -fx-spacing: 28px;
+}
+
+.login-root .login-brand-heading {
+    -fx-font-size: 64px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.login-root .login-brand-copy {
+    -fx-font-size: 18px;
+    -fx-text-fill: #e0ebff;
+}
+
+.login-root .login-brand-caption {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #c5d7ff;
+}
+
+.login-root .login-brand-line {
+    -fx-stroke: #91c6ff33;
+    -fx-stroke-width: 1.2px;
+}
+
+.login-root .login-brand-orbit {
+    -fx-fill: transparent;
+    -fx-stroke: #91c6ff26;
+    -fx-stroke-width: 1.1px;
+}
+
+.login-root .login-form-panel {
+    -fx-background-color: white;
+}
+
+.login-root .login-wordmark {
+    -fx-padding: 76px 44px 24px 44px;
+}
+
+.login-root .login-wordmark-blue,
+.login-root .login-wordmark-orange {
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+}
+
+.login-root .login-wordmark-blue {
+    -fx-text-fill: #127bb3;
+}
+
+.login-root .login-wordmark-orange {
+    -fx-text-fill: #ff7a1c;
+}
+
+.login-root .login-form-center {
+    -fx-padding: 12px 44px 36px 44px;
+}
+
+.login-root .login-form {
+    -fx-spacing: 20px;
+}
+
+.login-root .login-heading {
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #132f46;
+}
+
+.login-root .login-subheading {
+    -fx-font-size: 14px;
+    -fx-text-fill: #61768a;
+}
+
+.login-root .login-fields {
+    -fx-spacing: 18px;
+}
+
+.login-root .login-field {
+    -fx-spacing: 6px;
+}
+
+.login-root .login-field-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #29475f;
+}
+
+.login-root .login-input {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent transparent #cbd7e2 transparent;
+    -fx-border-radius: 0;
+    -fx-border-width: 0 0 1px 0;
+    -fx-padding: 10px 2px;
+    -fx-pref-height: 46px;
+    -fx-min-height: 46px;
+    -fx-font-size: 14px;
+    -fx-text-fill: #16354c;
+    -fx-prompt-text-fill: #8090a0;
+}
+
+.login-root .login-input:focused {
+    -fx-background-color: #f7fbff;
+    -fx-border-color: transparent transparent #209cdb transparent;
+    -fx-border-width: 0 0 2px 0;
+}
+
+.login-root .login-message {
+    -fx-font-size: 12px;
+    -fx-text-fill: #516a7f;
+    -fx-padding: 8px 12px;
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+    -fx-border-width: 1px;
+    -fx-border-color: transparent;
+}
+
+.login-root .login-message:error {
+    -fx-background-color: #fff0eb;
+    -fx-border-color: #ffd1c0;
+    -fx-text-fill: #a93824;
+}
+
+.login-root .login-message:pending {
+    -fx-background-color: #eff8ff;
+    -fx-border-color: #c9e7fb;
+    -fx-text-fill: #155e91;
+}
+
+.login-root .login-actions {
+    -fx-spacing: 10px;
+}
+
+.login-root .login-qr-button,
+.login-root .login-submit-button {
+    -fx-pref-height: 44px;
+    -fx-min-height: 44px;
+    -fx-background-radius: 7px;
+    -fx-border-radius: 7px;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.login-root .login-qr-button {
+    -fx-background-color: white;
+    -fx-border-color: #b8d5e8;
+    -fx-text-fill: #126b9e;
+}
+
+.login-root .login-qr-button:hover {
+    -fx-background-color: #eff8ff;
+}
+
+.login-root .login-submit-button {
+    -fx-background-color: #ff7a1c;
+    -fx-text-fill: #142c46;
+}
+
+.login-root .login-submit-button:hover {
+    -fx-background-color: #f36e10;
+}
+
+.login-root .login-submit-button:pressed {
+    -fx-background-color: #e9670c;
+}
+
+.login-root .login-qr-button:focused,
+.login-root .login-submit-button:focused {
+    -fx-border-color: #147db5;
+    -fx-border-width: 2px;
+}
+
+.login-root .login-footer {
+    -fx-font-size: 11px;
+    -fx-text-fill: #718397;
+}
+
+.login-root .label:disabled {
+    -fx-opacity: 1;
+}
+
+.login-root .button:disabled {
+    -fx-opacity: 0.6;
+    -fx-cursor: default;
+}
+
+.login-root:compact .login-wordmark {
+    -fx-padding: 16px 24px 8px 24px;
+}
+
+.login-root:compact .login-form-center {
+    -fx-padding: 12px 24px;
+}
+
+.login-root:compact .login-form {
+    -fx-spacing: 10px;
+}
+
+.login-root:compact .login-heading {
+    -fx-font-size: 24px;
+}
+
+.login-root:compact .login-subheading {
+    -fx-font-size: 12px;
+}
+
+.login-root:compact .login-fields {
+    -fx-spacing: 10px;
+}
+
+.login-root:compact .login-field {
+    -fx-spacing: 4px;
+}
+
+.login-root:compact .login-input {
+    -fx-pref-height: 36px;
+    -fx-min-height: 36px;
+    -fx-padding: 7px 2px;
+    -fx-font-size: 13px;
+}
+
+.login-root:compact .login-actions {
+    -fx-spacing: 8px;
+}
+
+.login-root:compact .login-qr-button,
+.login-root:compact .login-submit-button {
+    -fx-pref-height: 36px;
+    -fx-min-height: 36px;
+    -fx-font-size: 13px;
+}
+

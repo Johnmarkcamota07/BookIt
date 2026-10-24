@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.Pane?>
+
+<Pane xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:id="copyLabel"
+      minWidth="283.46456692913387" prefWidth="283.46456692913387" maxWidth="283.46456692913387"
+      minHeight="141.73228346456693" prefHeight="141.73228346456693" maxHeight="141.73228346456693"
+      styleClass="copy-barcode-label" stylesheets="@copy-barcode-label.css">
+    <children>
+        <Label fx:id="copyLabelTitle" layoutX="8.0" layoutY="6.0"
+               minWidth="267.46456692913387" prefWidth="267.46456692913387" maxWidth="267.46456692913387"
+               minHeight="25.0" prefHeight="25.0" maxHeight="25.0"
+               wrapText="true" alignment="TOP_LEFT" textOverrun="ELLIPSIS" styleClass="print-title"/>
+        <Label fx:id="copyLabelIdentity" layoutX="8.0" layoutY="32.0"
+               minWidth="267.46456692913387" prefWidth="267.46456692913387" maxWidth="267.46456692913387"
+               minHeight="11.0" prefHeight="11.0" maxHeight="11.0"
+               textOverrun="ELLIPSIS" styleClass="print-identity"/>
+        <ImageView fx:id="copyLabelBars" x="6.0" y="45.0"
+                   fitWidth="271.46456692913387" fitHeight="54.29291338582677"
+                   preserveRatio="true" smooth="false"/>
+        <Label fx:id="copyLabelCode" layoutX="8.0" layoutY="101.0"
+               minWidth="267.46456692913387" prefWidth="267.46456692913387" maxWidth="267.46456692913387"
+               minHeight="15.0" prefHeight="15.0" maxHeight="15.0"
+               alignment="CENTER" textOverrun="ELLIPSIS" styleClass="print-code"/>
+        <Label fx:id="copyLabelShelf" layoutX="8.0" layoutY="121.0"
+               minWidth="267.46456692913387" prefWidth="267.46456692913387" maxWidth="267.46456692913387"
+               minHeight="12.0" prefHeight="12.0" maxHeight="12.0"
+               textOverrun="ELLIPSIS" styleClass="print-shelf"/>
+    </children>
+</Pane>

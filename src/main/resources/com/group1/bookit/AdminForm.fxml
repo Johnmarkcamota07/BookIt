@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.ButtonType?>
+<?import javafx.scene.control.DialogPane?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.VBox?>
+
+<DialogPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            id="adminFormDialog" prefWidth="680.0" minWidth="400.0" minHeight="240.0"
+            styleClass="admin-form-dialog" stylesheets="@admin-form.css">
+    <header>
+        <VBox minWidth="0.0">
+            <children>
+                <Label fx:id="help" id="adminFormHelp" wrapText="true" minWidth="0.0"
+                       prefWidth="620.0" maxWidth="620.0" minHeight="-Infinity" styleClass="admin-form-help">
+                    <padding><Insets top="14.0" right="14.0" bottom="14.0" left="14.0"/></padding>
+                </Label>
+            </children>
+        </VBox>
+    </header>
+    <content>
+        <ScrollPane fx:id="formScroll" id="adminFormScroll" fitToWidth="true" hbarPolicy="NEVER"
+                    minWidth="0.0" minHeight="0.0" prefViewportWidth="620.0">
+            <content>
+                <VBox spacing="18.0" styleClass="admin-form-content">
+                    <children>
+                        <GridPane fx:id="fieldsGrid" id="adminFormFields" hgap="18.0" vgap="14.0"
+                                  styleClass="admin-form">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="32.0" minWidth="0.0"/>
+                                <ColumnConstraints percentWidth="68.0" minWidth="0.0" hgrow="ALWAYS"/>
+                            </columnConstraints>
+                        </GridPane>
+                        <Label fx:id="formError" id="adminFormError" wrapText="true" minHeight="-Infinity"
+                               visible="false" managed="false" styleClass="error-note"/>
+                    </children>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </content>
+    <buttonTypes>
+        <ButtonType fx:id="saveType" text="Save" buttonData="OK_DONE"/>
+        <ButtonType fx:constant="CANCEL"/>
+    </buttonTypes>
+</DialogPane>
+

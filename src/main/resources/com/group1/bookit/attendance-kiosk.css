@@ -1,0 +1,48 @@
+.attendance-kiosk,
+.attendance-unlock,
+.attendance-feedback {
+    -fx-background-color: #f4f7fb;
+    -fx-font-family: "Segoe UI";
+}
+
+.attendance-kiosk .attendance-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #142c46;
+}
+
+.attendance-kiosk .attendance-muted {
+    -fx-text-fill: #53677e;
+}
+
+.attendance-kiosk .attendance-camera-frame {
+    -fx-background-color: #142c46;
+    -fx-background-radius: 16px;
+    -fx-border-color: #31aff0;
+    -fx-border-width: 3px;
+    -fx-border-radius: 16px;
+}
+
+.attendance-kiosk .attendance-instruction {
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #142c46;
+}
+
+.attendance-kiosk .attendance-status {
+    -fx-font-size: 16px;
+    -fx-text-fill: #53677e;
+}
+
+.attendance-kiosk .attendance-scroll,
+.attendance-kiosk .attendance-scroll > .viewport {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+}
+
+.attendance-feedback .attendance-feedback-message {
+    -fx-font-size: 18px;
+    -fx-text-fill: #142c46;
+}
+

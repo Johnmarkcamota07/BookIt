@@ -1,68 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Rectangle?>
-<?import javafx.scene.text.Font?>
 
-<BorderPane
-        prefHeight="480.0"
-        prefWidth="640.0"
-        style="-fx-background-color: linear-gradient(to bottom right, #101827, #252344, #171c2b);"
-        xmlns="http://javafx.com/javafx/21"
-        xmlns:fx="http://javafx.com/fxml/1"
-        fx:controller="com.group1.bookit.QRreaderController">
-
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.group1.bookit.QRreaderController"
+            prefWidth="640.0" prefHeight="480.0" styleClass="qr-reader" stylesheets="@qr-reader.css">
     <center>
-        <VBox alignment="CENTER" spacing="16.0">
-            <padding>
-                <Insets top="25.0" right="25.0" bottom="25.0" left="25.0"/>
-            </padding>
-
-            <Label text="BookIt QR Reader" textFill="WHITE">
-                <font>
-                    <Font name="Bookman Old Style Bold" size="30.0"/>
-                </font>
-            </Label>
-
-            <Label text="Point the camera Login QR code."
-                   textFill="#C9D1E3"/>
-
-            <StackPane prefHeight="320.0"
-                       prefWidth="320.0"
-                       maxHeight="320.0"
-                       maxWidth="320.0"
-                       style="-fx-background-color: black; -fx-background-radius: 12;">
-
-                <ImageView fx:id="cameraImage"
-                           fitHeight="320.0"
-                           fitWidth="320.0"
-                           preserveRatio="true"/>
-
-                <Rectangle height="280.0"
-                           width="280.0"
-                           arcHeight="14.0"
-                           arcWidth="14.0"
-                           fill="TRANSPARENT"
-                           mouseTransparent="true"
-                           stroke="#55D6BE"
-                           strokeWidth="3.0"/>
-            </StackPane>
-
-            <Label fx:id="scanResultLabel"
-                   alignment="CENTER"
-                   maxWidth="500.0"
-                   textAlignment="CENTER"
-                   text="Opening camera..."
-                   textFill="WHITE"
-                   wrapText="true"/>
-
+        <VBox alignment="CENTER" spacing="10.0">
+            <padding><Insets top="16.0" right="16.0" bottom="16.0" left="16.0"/></padding>
+            <children>
+                <Label text="BookIt QR Reader" minHeight="-Infinity" styleClass="qr-reader-title"/>
+                <Label text="Place your saved BookIt login QR inside the square."
+                       minHeight="-Infinity" styleClass="qr-reader-subtitle"/>
+                <StackPane id="qrReaderFrame" minWidth="320.0" minHeight="320.0"
+                           prefWidth="320.0" prefHeight="320.0" maxWidth="320.0" maxHeight="320.0"
+                           styleClass="qr-reader-frame">
+                    <clip><Rectangle width="320.0" height="320.0" arcWidth="18.0" arcHeight="18.0"/></clip>
+                    <children>
+                        <ImageView fx:id="cameraImage" fitWidth="320.0" fitHeight="320.0" preserveRatio="true"/>
+                        <Rectangle id="qrReaderGuide" width="280.0" height="280.0" arcWidth="14.0" arcHeight="14.0"
+                                   mouseTransparent="true" styleClass="qr-reader-guide"/>
+                    </children>
+                </StackPane>
+                <Label fx:id="scanResultLabel" text="Opening camera..." alignment="CENTER" textAlignment="CENTER"
+                       maxWidth="560.0" minHeight="36.0" prefHeight="36.0" wrapText="true" styleClass="qr-reader-status"/>
+            </children>
         </VBox>
     </center>
-
 </BorderPane>

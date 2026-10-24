@@ -1,0 +1,25 @@
+.barcode-scanner {
+    -fx-background-color: #f4f7fb;
+    -fx-font-family: "Segoe UI";
+}
+
+.barcode-scanner .scanner-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #142c46;
+}
+
+.barcode-scanner .scanner-instruction {
+    -fx-font-size: 15px;
+    -fx-text-fill: #53677e;
+}
+
+.barcode-scanner .scanner-preview-frame {
+    -fx-background-color: #142c46;
+    -fx-background-radius: 12px;
+}
+
+.barcode-scanner .scanner-status {
+    -fx-text-fill: #53677e;
+}
+

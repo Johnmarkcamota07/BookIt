@@ -1,0 +1,55 @@
+.qr-reader {
+    -fx-background-color: linear-gradient(to bottom right, #183c93, #0f2858);
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 13px;
+}
+
+.qr-reader .qr-reader-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.qr-reader .qr-reader-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #d6e7ff;
+}
+
+.qr-reader .qr-reader-frame {
+    -fx-background-color: #101c2b;
+    -fx-background-radius: 12px;
+}
+
+.qr-reader .qr-reader-guide {
+    -fx-fill: transparent;
+    -fx-stroke: #ff984b;
+    -fx-stroke-width: 3px;
+}
+
+.qr-reader .qr-reader-status {
+    -fx-font-size: 13px;
+    -fx-text-fill: #e5efff;
+}
+
+.qr-reader-feedback {
+    -fx-background-color: white;
+    -fx-background-radius: 10px;
+    -fx-border-color: #efbc97;
+    -fx-border-radius: 10px;
+    -fx-border-width: 1px;
+    -fx-padding: 14px;
+    -fx-font-family: "Segoe UI";
+    -fx-effect: dropshadow(gaussian, #06182a26, 10, 0, 0, 2);
+}
+
+.qr-reader-feedback .qr-feedback-title {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #a54812;
+}
+
+.qr-reader-feedback .qr-feedback-message {
+    -fx-font-size: 14px;
+    -fx-text-fill: #17354b;
+}
+

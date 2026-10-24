@@ -1,0 +1,84 @@
+.copy-label-dialog {
+    -fx-background-color: #f4f7fb;
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 13px;
+    -fx-text-fill: #142b3e;
+    -fx-accent: #1487cc;
+    -fx-focus-color: #1487cc;
+    -fx-faint-focus-color: #1487cc22;
+}
+
+.copy-label-dialog .label-dialog-content {
+    -fx-background-color: #f4f7fb;
+}
+
+.copy-label-dialog .label-dialog-title {
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #18364b;
+}
+
+.copy-label-dialog .label-dialog-caption {
+    -fx-font-size: 12px;
+    -fx-text-fill: #61778a;
+}
+
+.copy-label-dialog .label-dialog-muted {
+    -fx-font-size: 12px;
+    -fx-text-fill: #60768b;
+    -fx-line-spacing: 3px;
+}
+
+.copy-label-dialog .label-dialog-preview {
+    -fx-background-color: #e7edf4;
+    -fx-border-color: #cbd5e1;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+}
+
+.copy-label-dialog .label-dialog-note {
+    -fx-background-color: #eaf4fd;
+    -fx-text-fill: #315c7a;
+    -fx-padding: 12px 16px;
+    -fx-background-radius: 8px;
+    -fx-font-size: 12px;
+}
+
+.copy-label-dialog .button {
+    -fx-cursor: hand;
+}
+
+.copy-label-dialog .label-dialog-primary-button,
+.copy-label-dialog .label-dialog-secondary-button {
+    -fx-background-radius: 7px;
+    -fx-padding: 10px 16px;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-min-height: 36px;
+}
+
+.copy-label-dialog .label-dialog-primary-button {
+    -fx-background-color: #0d76b3;
+    -fx-text-fill: white;
+}
+
+.copy-label-dialog .label-dialog-primary-button:hover {
+    -fx-background-color: #09699f;
+}
+
+.copy-label-dialog .label-dialog-secondary-button {
+    -fx-background-color: #eef5fb;
+    -fx-text-fill: #24516f;
+    -fx-border-color: #d4e1ec;
+    -fx-border-radius: 7px;
+}
+
+.copy-label-dialog .label-dialog-secondary-button:hover {
+    -fx-background-color: #dfeefa;
+}
+
+.copy-label-dialog .button:disabled {
+    -fx-opacity: 0.58;
+    -fx-cursor: default;
+}
+

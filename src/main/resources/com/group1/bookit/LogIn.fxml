@@ -1,107 +1,123 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.shape.Line?>
+<?import javafx.scene.shape.Rectangle?>
 
-<StackPane prefHeight="480.0" prefWidth="640.0" style="-fx-background-color: linear-gradient(to bottom right, #101827, #252344, #171c2b);" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.group1.bookit.PrimaryController">
-
+<StackPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.group1.bookit.PrimaryController" fx:id="loginRoot"
+           prefWidth="1040.0" prefHeight="700.0" minWidth="0.0" minHeight="0.0"
+           styleClass="login-root" stylesheets="@login.css">
+    <fx:define>
+        <Image fx:id="bookitLogoImage" url="@images/logo2.png"/>
+    </fx:define>
     <children>
-        <HBox alignment="CENTER" maxHeight="480.0" maxWidth="641.0" prefHeight="480.0" prefWidth="641.0" spacing="0.0">
-
+        <HBox id="loginCard" minWidth="0.0" minHeight="0.0" maxWidth="Infinity" maxHeight="Infinity"
+              styleClass="login-split">
             <children>
-                <VBox alignment="CENTER" minWidth="370.0" prefHeight="480.0" prefWidth="370.0" style="-fx-background-color: #171c2b;">
-
-                    <padding>
-                        <Insets bottom="20.0" left="10.0" right="10.0" top="20.0" />
-                    </padding>
-
+                <StackPane fx:id="loginBranding" minHeight="0.0" styleClass="login-brand-panel">
+                    <clip><Rectangle fx:id="brandingClip"/></clip>
                     <children>
-                        <Label prefHeight="190.0" prefWidth="207.0" text="Know your library inside out. BookIt." textFill="WHITE" wrapText="true">
-
-                            <font>
-                                <Font name="Bookman Old Style" size="39.0" />
-                            </font>
-                        </Label>
+                        <Pane managed="false" mouseTransparent="true" pickOnBounds="false">
+                            <children>
+                                <Line startX="-140.0" startY="450.0" endX="1050.0" endY="-110.0" styleClass="login-brand-line"/>
+                                <Line startX="-110.0" startY="520.0" endX="1090.0" endY="-40.0" styleClass="login-brand-line"/>
+                                <Line startX="-80.0" startY="590.0" endX="1130.0" endY="30.0" styleClass="login-brand-line"/>
+                                <Circle centerX="-155.0" centerY="245.0" radius="500.0" styleClass="login-brand-orbit"/>
+                                <Circle centerX="-155.0" centerY="245.0" radius="565.0" styleClass="login-brand-orbit"/>
+                                <Circle centerX="-155.0" centerY="245.0" radius="630.0" styleClass="login-brand-orbit"/>
+                            </children>
+                        </Pane>
+                        <Pane minWidth="0.0" minHeight="0.0">
+                            <children>
+                                <ImageView fx:id="loginLogo" image="$bookitLogoImage" fitWidth="120.0" fitHeight="112.0"
+                                           layoutX="${loginBranding.width * 0.18}" layoutY="${loginBranding.height * 0.08}"
+                                           preserveRatio="true" smooth="true"/>
+                                <VBox layoutX="${loginBranding.width * 0.18}" layoutY="${loginBranding.height * 0.30}"
+                                      prefWidth="${loginBranding.width * 0.70}" styleClass="login-brand-copy-group">
+                                    <children>
+                                        <Label text="Hello,&#10;BookIt!" wrapText="true" minHeight="-Infinity" styleClass="login-brand-heading"/>
+                                        <Label text="Find your next read, keep track of your books, and make the most of every library visit."
+                                               maxWidth="400.0" wrapText="true" minHeight="-Infinity" styleClass="login-brand-copy"/>
+                                    </children>
+                                </VBox>
+                                <Label text="YOUR LIBRARY, CONNECTED" layoutX="${loginBranding.width * 0.18}"
+                                       layoutY="${loginBranding.height - 54}" styleClass="login-brand-caption"/>
+                            </children>
+                        </Pane>
                     </children>
-                </VBox>
-
-                <VBox alignment="TOP_CENTER" minWidth="271.0" prefHeight="480.0" prefWidth="271.0" style="-fx-background-color: #2b3043;">
-
-                    <children>
-                        <Label alignment="CENTER" contentDisplay="CENTER" prefHeight="59.0" prefWidth="210.0" text="BookIt" textAlignment="CENTER" textFill="WHITE">
-
-                            <font>
-                                <Font name="Bookman Old Style Bold" size="60.0" />
-                            </font>
-
-                            <VBox.margin>
-                                <Insets top="20.0" />
-                            </VBox.margin>
-                        </Label>
-
-                        <Label alignment="CENTER" text=" Library Management and Tracking System" textFill="WHITE" wrapText="true">
-
-                            <VBox.margin>
-                                <Insets bottom="20.0" />
-                            </VBox.margin>
-                        </Label>
-                        <Label fx:id="loginMessageLabel" text="" alignment="CENTER" contentDisplay="CENTER" prefHeight="18.0" prefWidth="195.0"  />
-
-                        <TextField fx:id="usernameField" prefHeight="26.0" prefWidth="226.0" promptText="Username">
-
-                            <VBox.margin>
-                                <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-                            </VBox.margin>
-
-                            <font>
-                                <Font size="18.0" />
-                            </font>
-                        </TextField>
-
-                        <PasswordField fx:id="passwordField" promptText="Password">
-
-                            <VBox.margin>
-                                <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-                            </VBox.margin>
-
-                            <font>
-                                <Font size="18.0" />
-                            </font>
-                        </PasswordField>
-                        <Button mnemonicParsing="false" onAction="#openQrReader" prefHeight="40.0" prefWidth="142.0" style="-fx-background-color: #55D6BE;                                        -fx-background-radius: 20;" text="Start QR Reader">
-
-                            <font>
-                                <Font size="16.0" />
-                            </font>
-
-                            <VBox.margin>
-                                <Insets bottom="8.0" left="20.0" right="20.0" top="10.0" />
-                            </VBox.margin>
-                        </Button>
-
-                        <Button alignment="CENTER" contentDisplay="CENTER" graphicTextGap="5.0" mnemonicParsing="false" onAction="#handleLogin" prefHeight="40.0" prefWidth="142.0" style="-fx-border-color: #2b3043; -fx-border-radius: 20; -fx-background-radius: 20;" text="Log In" textAlignment="CENTER">
-
-                            <font>
-                                <Font size="18.0" />
-                            </font>
-
-                            <VBox.margin>
-                                <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-                            </VBox.margin>
-                        </Button>
-                    </children>
-
-                    <padding>
-                        <Insets bottom="20.0" left="10.0" right="10.0" top="20.0" />
-                    </padding>
-                </VBox>
+                </StackPane>
+                <BorderPane id="loginFormPanel" minWidth="0.0" minHeight="0.0" HBox.hgrow="ALWAYS" styleClass="login-form-panel">
+                    <top>
+                        <HBox id="loginWordmark" alignment="CENTER_LEFT" spacing="12.0" styleClass="login-wordmark">
+                            <children>
+                                <ImageView fx:id="compactLogo" image="$bookitLogoImage" fitWidth="50.0" fitHeight="48.0"
+                                           visible="false" managed="false" preserveRatio="true" smooth="true"/>
+                                <HBox alignment="CENTER_LEFT" spacing="0.0">
+                                    <children>
+                                        <Label text="Book" styleClass="login-wordmark-blue"/>
+                                        <Label text="IT" styleClass="login-wordmark-orange"/>
+                                    </children>
+                                </HBox>
+                            </children>
+                        </HBox>
+                    </top>
+                    <center>
+                        <StackPane minWidth="0.0" minHeight="0.0" styleClass="login-form-center">
+                            <children>
+                                <VBox maxWidth="370.0" minWidth="0.0" alignment="CENTER_LEFT" styleClass="login-form">
+                                    <children>
+                                        <VBox spacing="6.0" minWidth="0.0">
+                                            <children>
+                                                <Label text="Welcome back!" minHeight="-Infinity" styleClass="login-heading"/>
+                                                <Label text="Sign in to your library account." wrapText="true" minHeight="-Infinity" styleClass="login-subheading"/>
+                                            </children>
+                                        </VBox>
+                                        <VBox styleClass="login-fields">
+                                            <children>
+                                                <VBox styleClass="login-field">
+                                                    <children>
+                                                        <Label text="Username" styleClass="login-field-label"/>
+                                                        <TextField fx:id="usernameField" promptText="Enter your username" accessibleText="Username" styleClass="login-input"/>
+                                                    </children>
+                                                </VBox>
+                                                <VBox styleClass="login-field">
+                                                    <children>
+                                                        <Label text="Password" styleClass="login-field-label"/>
+                                                        <PasswordField fx:id="passwordField" promptText="Enter your password" accessibleText="Password" styleClass="login-input"/>
+                                                    </children>
+                                                </VBox>
+                                            </children>
+                                        </VBox>
+                                        <Label fx:id="loginMessageLabel" text="" minHeight="48.0" prefHeight="48.0" maxWidth="Infinity"
+                                               wrapText="true" styleClass="login-message"/>
+                                        <VBox styleClass="login-actions">
+                                            <children>
+                                                <Button id="loginQrButton" text="Start QR Reader" onAction="#openQrReader"
+                                                        mnemonicParsing="false" maxWidth="Infinity" styleClass="login-qr-button"/>
+                                                <Button id="loginSubmitButton" text="Log In" onAction="#handleLogin" defaultButton="true"
+                                                        mnemonicParsing="false" maxWidth="Infinity" styleClass="login-submit-button"/>
+                                            </children>
+                                        </VBox>
+                                        <Label fx:id="loginFooter" text="For library members and administrators." wrapText="true"
+                                               minHeight="-Infinity" styleClass="login-footer"/>
+                                    </children>
+                                </VBox>
+                            </children>
+                        </StackPane>
+                    </center>
+                </BorderPane>
             </children>
         </HBox>
     </children>

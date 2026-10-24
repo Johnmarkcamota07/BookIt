@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      prefWidth="440.0" maxWidth="440.0" minWidth="0.0" spacing="7.0"
+      styleClass="qr-reader-feedback" stylesheets="@qr-reader.css">
+    <children>
+        <Label text="Check your QR" minHeight="-Infinity" styleClass="qr-feedback-title"/>
+        <Label fx:id="feedbackMessage" id="qrReaderFeedbackMessage" maxWidth="Infinity"
+               wrapText="true" minHeight="-Infinity" styleClass="qr-feedback-message"/>
+    </children>
+</VBox>
+
