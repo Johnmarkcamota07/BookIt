@@ -38,7 +38,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 
-/** A separate USER-only QR window. It does not change the application session. */
 public final class UserQrDialog {
     @FunctionalInterface
     interface Issuer {
@@ -99,7 +98,6 @@ public final class UserQrDialog {
         stage.setMinHeight(480);
 
         Scene scene = loadScene();
-        // No output worker is allocated for an invalid account or a failed FXML load.
         worker = Executors.newSingleThreadExecutor(task -> {
             Thread thread = new Thread(task, "bookit-qr-generation");
             thread.setDaemon(true);
@@ -292,7 +290,6 @@ public final class UserQrDialog {
         disposed = true;
         password.clear();
         clearImage();
-        // Normal UI close is blocked while busy; forced app shutdown never retries a write.
         worker.shutdown();
     }
 

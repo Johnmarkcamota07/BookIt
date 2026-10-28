@@ -4,10 +4,4 @@
  */
 package com.group1.bookit;
 
-/**
- *
- * @author John Mark
- */
-
-/** Label-safe physical-copy data. This value deliberately has no borrower fields. */
 public record BookCopyLabel(String copyId, String bookId, String title, String barcode, String shelf) {}

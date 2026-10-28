@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      id="adminAutomationPage" spacing="22.0" minWidth="0.0" stylesheets="@bookit-dashboard.css">
+    <VBox spacing="16.0" minWidth="0.0" maxWidth="1.7976931348623157E308" styleClass="section-card">
+        <Label text="Automatic overdue fines" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+        <Label text="PHP20 per calendar day · Asia/Manila · zero grace days · no maximum" wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+        <Label text="Due October 24: October 25 = PHP20, October 26 = PHP40. The return date is the last chargeable date. Returning on the due date costs nothing." wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+        <Label text="Runs on dashboard opening, then every 60 seconds while this signed-in admin dashboard is open and not busy. Missed days are caught up next time. It does not run when all admin apps are closed." wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+        <FlowPane hgap="12.0" vgap="12.0" styleClass="toolbar">
+            <Button fx:id="automationRun" text="Run checks now" mnemonicParsing="false" maxWidth="-Infinity" styleClass="primary-button"/>
+            <Button fx:id="automationPause" text="Pause periodic checks" mnemonicParsing="false" maxWidth="-Infinity" styleClass="secondary-button"/>
+        </FlowPane>
+        <Label fx:id="automationFeedback" wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+        <Label fx:id="automationCheckedAt" wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+    </VBox>
+    <VBox spacing="16.0" minWidth="0.0" maxWidth="1.7976931348623157E308" styleClass="section-card">
+        <Label text="Safeguards" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+        <Label text="Each loan is saved in its own transaction; this is not online payment processing." wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+        <Label text="Manual charges, paid fines, waived fines, and manually overridden automatic charges are never overwritten. An admin adjustment opts that charge out of future automated changes." wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+        <Label text="Automatic fines must be finalized by a return before payment. Payment rechecks the amount you confirmed. A manual charge already attached to a loan takes precedence because the existing schema permits one fine per loan." wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+    </VBox>
+    <VBox spacing="16.0" minWidth="0.0" maxWidth="1.7976931348623157E308" styleClass="section-card">
+        <Label text="Member renewals" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+        <Label text="One renewal per loan, requested by the member; renewals are never automatic." wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+        <Label text="Adds seven days to the current due date. Must be before the deadline, with no positive unpaid fines and no other member waiting for that title. The database rechecks all conditions." wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+    </VBox>
+</VBox>

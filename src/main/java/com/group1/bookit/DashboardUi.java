@@ -1,14 +1,16 @@
 package com.group1.bookit;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.URL;
 import java.util.Locale;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
-import javafx.geometry.Pos;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -34,28 +36,27 @@ public final class DashboardUi {
     }
 
     public static VBox page(Node... nodes) {
-        VBox box = new VBox(22, nodes);
-        box.getStyleClass().add("page-content");
-        box.setFillWidth(true);
-        box.setMinWidth(0);
+        VBox box = layout("DashboardPage.fxml").getRoot();
+        box.getChildren().addAll(nodes);
         return box;
     }
 
     public static VBox section(String title, String subtitle, Node... nodes) {
-        VBox box = new VBox(16);
-        box.getStyleClass().add("section-card");
-        box.setMinWidth(0);
-        box.setMaxWidth(Double.MAX_VALUE);
-        if (title != null && !title.isBlank()) box.getChildren().add(label(title, "section-title"));
-        if (subtitle != null && !subtitle.isBlank()) box.getChildren().add(label(subtitle, "muted"));
+        FXMLLoader view = layout("DashboardSection.fxml");
+        VBox box = view.getRoot();
+        Label heading = node(view, "sectionTitle", Label.class);
+        Label description = node(view, "sectionSubtitle", Label.class);
+        if (title == null || title.isBlank()) box.getChildren().remove(heading);
+        else heading.setText(title);
+        if (subtitle == null || subtitle.isBlank()) box.getChildren().remove(description);
+        else description.setText(subtitle);
         box.getChildren().addAll(nodes);
         return box;
     }
 
     public static HBox row(Node... nodes) {
-        HBox row = new HBox(18, nodes);
-        row.setAlignment(Pos.TOP_LEFT);
-        row.setFillHeight(true);
+        HBox row = layout("DashboardRow.fxml").getRoot();
+        row.getChildren().addAll(nodes);
         for (Node node : nodes) {
             if (node instanceof Region) HBox.setHgrow(node, Priority.ALWAYS);
         }
@@ -63,12 +64,12 @@ public final class DashboardUi {
     }
 
     public static VBox stat(String title, String value, String detail, String accent) {
-        VBox card = new VBox(10,
-                label(title, "stat-label"), label(value, "stat-value"), label(detail, "stat-detail"));
-        card.getStyleClass().addAll("stat-card", "accent-" + accent);
-        card.setMinWidth(0);
-        card.setPrefWidth(220);
-        card.setMaxWidth(Double.MAX_VALUE);
+        FXMLLoader view = layout("DashboardStat.fxml");
+        VBox card = view.getRoot();
+        node(view, "statTitle", Label.class).setText(title);
+        node(view, "statValue", Label.class).setText(value);
+        node(view, "statDetail", Label.class).setText(detail);
+        card.getStyleClass().add("accent-" + accent);
         return card;
     }
 
@@ -82,14 +83,9 @@ public final class DashboardUi {
     }
 
     public static TableView<ObservableList<String>> table(String[] headers, String[][] rows) {
-        TableView<ObservableList<String>> table = new TableView<>();
-        table.getStyleClass().add("data-table");
+        TableView<ObservableList<String>> table = layout("DashboardTable.fxml").getRoot();
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        table.setEditable(false);
-        table.setMinWidth(0);
-        table.setMinHeight(180);
         table.setPrefHeight(Math.min(360, Math.max(220, rows.length * 46 + 54)));
-        table.setPlaceholder(label("No matching records.", "muted"));
         for (int columnIndex = 0; columnIndex < headers.length; columnIndex++) {
             final int index = columnIndex;
             TableColumn<ObservableList<String>, String> column = new TableColumn<>(headers[index]);
@@ -124,40 +120,35 @@ public final class DashboardUi {
                 new javafx.collections.transformation.SortedList<>(filtered);
         sorted.comparatorProperty().bind(table.comparatorProperty());
         table.setItems(sorted);
-        TextField search = new TextField();
+        FXMLLoader view = layout("DashboardSearch.fxml");
+        VBox box = view.getRoot();
+        TextField search = node(view, "searchInput", TextField.class);
         search.setPromptText(prompt);
         search.setAccessibleText(prompt);
-        search.getStyleClass().add("search-field");
-        search.setPrefWidth(360);
-        search.setMaxWidth(500);
         String suffix = sample ? " sample records" : " records";
-        Label count = label(rows.length + suffix, "muted");
+        Label count = node(view, "searchCount", Label.class);
+        count.setText(rows.length + suffix);
         search.textProperty().addListener((observable, before, after) -> {
             String query = after.strip().toLowerCase(Locale.ROOT);
             filtered.setPredicate(values -> values.stream().anyMatch(value ->
                     value.toLowerCase(Locale.ROOT).contains(query)));
             count.setText(filtered.size() + " of " + rows.length + suffix);
         });
-        HBox toolbar = new HBox(16, search, count);
-        toolbar.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(search, Priority.ALWAYS);
-        return new VBox(16, toolbar, table);
+        box.getChildren().add(table);
+        return box;
     }
 
     public static VBox emptyState(String title, String detail) {
-        VBox box = new VBox(12, label(title, "section-title"), label(detail, "muted"));
-        box.getStyleClass().add("empty-state");
-        box.setAlignment(Pos.CENTER);
-        box.setMinHeight(160);
-        return box;
+        FXMLLoader view = layout("DashboardEmpty.fxml");
+        node(view, "emptyTitle", Label.class).setText(title);
+        node(view, "emptyDetail", Label.class).setText(detail);
+        return view.getRoot();
     }
 
     public static Button unavailable(String text, String reason) {
         Button button = button(text, "secondary-button", null);
         button.setDisable(true);
         button.setTooltip(new Tooltip(reason));
-        // Disabled controls cannot always receive mouse events. Keep the explanation
-        // visible in the page as well, rather than relying on a tooltip alone.
         button.setAccessibleHelp(reason);
         return button;
     }
@@ -167,20 +158,35 @@ public final class DashboardUi {
     }
 
     public static void detailDialog(Node owner, String title, Node content, String headerText) {
+        FXMLLoader view = layout("DashboardDetail.fxml");
         Dialog<Void> dialog = new Dialog<>();
+        dialog.setDialogPane(view.getRoot());
         dialog.setTitle(title);
         dialog.setHeaderText(headerText);
         if (owner != null && owner.getScene() != null && owner.getScene().getWindow() != null) {
             dialog.initOwner(owner.getScene().getWindow());
         }
-        ScrollPane scroll = new ScrollPane(content);
-        scroll.setFitToWidth(true);
-        scroll.setPrefViewportWidth(560);
-        scroll.setPrefViewportHeight(380);
-        dialog.getDialogPane().setContent(scroll);
-        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
-        java.net.URL css = DashboardUi.class.getResource("bookit-dashboard.css");
-        if (css != null) dialog.getDialogPane().getStylesheets().add(css.toExternalForm());
+        node(view, "detailScroll", ScrollPane.class).setContent(content);
         dialog.showAndWait();
+    }
+
+    private static FXMLLoader layout(String filename) {
+        URL location = DashboardUi.class.getResource("/com/group1/bookit/" + filename);
+        if (location == null) {
+            throw new UncheckedIOException(new IOException(filename + " is missing from the bookit resource folder."));
+        }
+        FXMLLoader loader = new FXMLLoader(location);
+        try {
+            loader.load();
+            return loader;
+        } catch (IOException failure) {
+            throw new UncheckedIOException("The shared dashboard layout could not be loaded: " + filename, failure);
+        }
+    }
+
+    private static <T> T node(FXMLLoader loader, String name, Class<T> type) {
+        Object value = loader.getNamespace().get(name);
+        if (!type.isInstance(value)) throw new IllegalStateException("The shared dashboard layout is missing " + name + ".");
+        return type.cast(value);
     }
 }

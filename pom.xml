@@ -120,8 +120,8 @@
 
                 <configuration>
                     <mainClass>com.group1.bookit.App</mainClass>
-                    <!--<mainClass>com.group1.bookit.DependencySmokeTest</mainClass>-->
-                    <!--to run a dependency test on all the jar file imported, use after importing -->
+<!--                    <mainClass>com.group1.bookit.DependencySmokeTest</mainClass>-->
+<!--                    to run a dependency test on all the jar file imported, use after importing -->
                 </configuration>
 
                 <executions>

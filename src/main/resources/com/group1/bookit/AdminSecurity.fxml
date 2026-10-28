@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.VBox?>
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      id="adminSecurityPage" spacing="22.0" minWidth="0.0" stylesheets="@bookit-dashboard.css">
+    <VBox spacing="16.0" minWidth="0.0" maxWidth="1.7976931348623157E308" styleClass="section-card">
+        <Label text="Administrator account" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+        <Label text="Identity supplied by sign-in; the database is rechecked before a password change." wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+        <Label fx:id="adminSecurityUsername" wrapText="true" minHeight="-Infinity" styleClass="profile-value"/>
+        <Label fx:id="adminSecurityIdentity" wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+    </VBox>
+    <VBox spacing="16.0" minWidth="0.0" maxWidth="1.7976931348623157E308" styleClass="section-card">
+        <Label text="Change your password" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+        <Label text="This changes your own password only. It cannot reset another member's credentials." wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+        <Button fx:id="adminChangePassword" text="Change password" mnemonicParsing="false" maxWidth="-Infinity" styleClass="primary-button"/>
+        <Label text="A successful change signs out this app session and revokes any saved QR credential for this account. Administrator QR login remains disabled." wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+    </VBox>
+</VBox>

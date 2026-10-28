@@ -16,12 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/** Read-only library queries. Invoke on a worker thread, not the JavaFX UI thread. */
 public final class LibraryRepository {
     private static final int QUERY_TIMEOUT_SECONDS = 12;
 
-    // Count copies independently of authors: joining both before COUNT would
-    // multiply a book's copy count when the book has multiple authors.
     private static final String BOOKS_SQL = """
             SELECT b.book_id AS book_id, b.title AS title, b.isbn AS isbn,
                    c.category_name AS category_name,
@@ -44,8 +41,6 @@ public final class LibraryRepository {
             ORDER BY b.title, b.book_id
             """;
 
-    // One second query, not a query per book. Java joins the names so there is
-    // no GROUP_CONCAT length limit silently cutting off a long author list.
     private static final String AUTHORS_SQL = """
             SELECT ba.book_id AS book_id, a.author_name AS author_name
             FROM book_author ba
@@ -79,7 +74,6 @@ public final class LibraryRepository {
         this.connections = Objects.requireNonNull(connections, "connections");
     }
 
-    /** Authenticated members and administrators may browse the same catalog. */
     public List<LibraryBook> findBooks(AuthenticatedUser actor) throws SQLException {
         requireActor(actor, false);
         List<LibraryBook> books = new ArrayList<>();
@@ -122,7 +116,6 @@ public final class LibraryRepository {
         return List.copyOf(result);
     }
 
-    /** No user-ID argument: the query is scoped to the supplied signed-in account. */
     public List<LibraryLoan> findMyLoans(AuthenticatedUser actor) throws SQLException {
         requireActor(actor, true);
         List<LibraryLoan> loans = new ArrayList<>();
@@ -132,8 +125,7 @@ public final class LibraryRepository {
             statement.setString(1, actor.userId());
             try (ResultSet rows = statement.executeQuery()) {
                 while (rows.next()) {
-                    // DATETIME has no zone. Preserve its wall-clock fields and
-                    // interpret them as UTC in LibraryLoan, not the JVM zone.
+
                     loans.add(new LibraryLoan(rows.getString("loan_id"),
                             rows.getString("book_title"), rows.getString("barcode"),
                             rows.getObject("borrowed_at", LocalDateTime.class),

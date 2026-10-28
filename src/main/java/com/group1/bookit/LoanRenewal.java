@@ -6,7 +6,6 @@ package com.group1.bookit;
 
 import java.time.LocalDateTime;
 
-/** Immutable renewal receipt/history. All dates are database UTC values. */
 public record LoanRenewal(String loanId, String requestId, String bookTitle,
         String barcode, LocalDateTime previousDueAt, LocalDateTime newDueAt,
         LocalDateTime renewedAt) {}

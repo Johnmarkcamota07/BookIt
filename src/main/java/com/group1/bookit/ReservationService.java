@@ -15,8 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/** Member reservation operations. Call on a worker thread. Every operation
- * checks the account in the database; no mutable global session is consulted. */
+
 public class ReservationService {
     private static final int QUERY_TIMEOUT_SECONDS = 12;
     private static final String MY_RESERVATIONS_SQL = """
@@ -64,21 +63,18 @@ public class ReservationService {
         try (Connection c = open()) {
             c.setAutoCommit(false);
             try {
-                // This preflight is not a lock. The authoritative check follows
-                // the book lock, matching AdminService.issue's book/member order.
+                
                 authorize(c, user, false);
                 lockBook(c, book);
                 authorize(c, user, true);
-                // AVAILABLE is the copy's physical circulation status. An open
-                // loan does not make a title ineligible for the waiting queue.
+                
                 if (!exists(c, """
                         SELECT copy_id FROM book_copy WHERE book_id=? AND status='AVAILABLE'
                         ORDER BY copy_id LIMIT 1 FOR UPDATE
                         """, book)) {
                     throw new IllegalArgumentException("This title has no circulatable copies to reserve.");
                 }
-                // Locking reads see current committed data even if a preflight
-                // read created an older REPEATABLE READ snapshot.
+               
                 if (exists(c, """
                         SELECT reservation_id FROM reservation
                         WHERE user_id=? AND book_id=? AND status IN ('PENDING','READY')
@@ -100,8 +96,7 @@ public class ReservationService {
                             VALUES(?,?,UTC_TIMESTAMP(),'PENDING')
                             """, book, user);
                 } catch (SQLException failure) {
-                    // This insert has one unique constraint: the active
-                    // member/title guard. Do not retry a write automatically.
+                    
                     if (failure.getErrorCode() == 1062) {
                         throw new IllegalArgumentException(duplicate().getMessage(), failure);
                     }
@@ -124,8 +119,7 @@ public class ReservationService {
             try {
                 authorize(c, user, false);
                 Long book = null;
-                // Resolve only the caller's record. This read takes no row lock;
-                // all writes use the same book -> member -> reservation order.
+               
                 try (PreparedStatement s = prepare(c,
                         "SELECT book_id FROM reservation WHERE reservation_id=? AND user_id=?",
                         reservation, user); ResultSet r = s.executeQuery()) {

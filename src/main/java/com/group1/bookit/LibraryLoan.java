@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Objects;
 
-/** Loan timestamps are the UTC DATETIME values used by the BookIt schema. */
 public record LibraryLoan(
         String loanId,
         String bookTitle,

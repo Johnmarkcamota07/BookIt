@@ -1,0 +1,29 @@
+.report-print-page {
+    -fx-background-color: white;
+}
+
+.report-print-heading {
+    -fx-font-family: 'Segoe UI';
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: black;
+}
+
+.report-print-caption {
+    -fx-font-size: 9px;
+    -fx-text-fill: black;
+}
+
+.report-print-cell {
+    -fx-font-family: 'Segoe UI';
+    -fx-font-size: 9px;
+    -fx-text-fill: black;
+    -fx-padding: 4px;
+    -fx-border-color: #d4dce3;
+    -fx-border-width: 0 0 1 0;
+}
+
+.report-print-cell.report-print-header {
+    -fx-font-weight: bold;
+    -fx-background-color: #eef3f7;
+}

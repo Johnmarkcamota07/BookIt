@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Shared DashboardDetail.fxml owns the modal, scroll pane and Close button. -->
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      id="memberBookDetails" spacing="22.0" minWidth="0.0" styleClass="page-content" stylesheets="@bookit-dashboard.css">
+    <children>
+        <Label fx:id="catalogBookTitle" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="section-title"/>
+        <Label fx:id="catalogBookAuthors" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="muted"/>
+        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field">
+            <children>
+                <Label text="BOOK ID" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                <Label fx:id="catalogBookId" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+            </children>
+        </VBox>
+        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field">
+            <children>
+                <Label text="CATEGORY" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                <Label fx:id="catalogBookCategory" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+            </children>
+        </VBox>
+        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field">
+            <children>
+                <Label text="ISBN" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                <Label fx:id="catalogBookIsbn" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+            </children>
+        </VBox>
+        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field">
+            <children>
+                <Label text="AVAILABLE / TOTAL COPIES" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                <Label fx:id="catalogBookCopies" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+            </children>
+        </VBox>
+        <Label text="Availability is a snapshot. Use Reserve selected book in the catalog to request this title."
+               wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+    </children>
+</VBox>
+

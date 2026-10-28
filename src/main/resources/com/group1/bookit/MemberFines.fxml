@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      id="memberFinesPage" spacing="22.0" minWidth="0.0" prefWidth="760.0"
+      stylesheets="@bookit-dashboard.css">
+    <fx:define>
+        <Label fx:id="memberFineEmpty" text="No fine records are recorded for your account." wrapText="true" styleClass="muted"/>
+        <Label fx:id="memberFineNoMatches" text="No fine records match your search and status." wrapText="true" styleClass="muted"/>
+    </fx:define>
+    <children>
+        <HBox id="memberFineStats" spacing="18.0" alignment="TOP_LEFT" fillHeight="true">
+            <children>
+                <VBox spacing="10.0" minWidth="0.0" prefWidth="220.0" maxWidth="1.7976931348623157E308"
+                      HBox.hgrow="ALWAYS" styleClass="stat-card, accent-orange">
+                    <children>
+                        <Label text="OUTSTANDING" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                        <Label fx:id="memberFineOutstanding" wrapText="true" minHeight="-Infinity" styleClass="stat-value"/>
+                        <Label text="Recorded UNPAID charges only" wrapText="true" minHeight="-Infinity" styleClass="stat-detail"/>
+                    </children>
+                </VBox>
+                <VBox spacing="10.0" minWidth="0.0" prefWidth="220.0" maxWidth="1.7976931348623157E308"
+                      HBox.hgrow="ALWAYS" styleClass="stat-card, accent-green">
+                    <children>
+                        <Label text="RECORDED PAID" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                        <Label fx:id="memberFinePaid" wrapText="true" minHeight="-Infinity" styleClass="stat-value"/>
+                        <Label text="Charges marked PAID by staff" wrapText="true" minHeight="-Infinity" styleClass="stat-detail"/>
+                    </children>
+                </VBox>
+                <VBox spacing="10.0" minWidth="0.0" prefWidth="220.0" maxWidth="1.7976931348623157E308"
+                      HBox.hgrow="ALWAYS" styleClass="stat-card, accent-blue">
+                    <children>
+                        <Label text="WAIVED" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                        <Label fx:id="memberFineWaived" wrapText="true" minHeight="-Infinity" styleClass="stat-value"/>
+                        <Label text="Waived charges are not owed" wrapText="true" minHeight="-Infinity" styleClass="stat-detail"/>
+                    </children>
+                </VBox>
+            </children>
+        </HBox>
+        <VBox id="memberFineRecordsSection" spacing="16.0" minWidth="0.0" maxWidth="1.7976931348623157E308" styleClass="section-card">
+            <children>
+                <Label text="Your fine records" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+                <Label text="Only fines linked to your authenticated member ID are loaded. Summary totals include all your loaded records, regardless of filters."
+                       wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+                <HBox spacing="12.0">
+                    <children>
+                        <TextField fx:id="memberFineSearch" promptText="Search book, barcode, fine ID, or loan ID…"
+                                   accessibleText="Search your fine records" minWidth="100.0"
+                                   HBox.hgrow="ALWAYS" styleClass="search-field"/>
+                        <ComboBox fx:id="memberFineStatus" accessibleText="Filter your fine records by payment status" prefWidth="145.0"/>
+                        <Button fx:id="memberFineRefresh" text="Refresh" mnemonicParsing="false" maxWidth="-Infinity" styleClass="secondary-button"/>
+                    </children>
+                </HBox>
+                <Label fx:id="memberFineCount" wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+                <VBox fx:id="memberFineTableHost" minWidth="0.0"/>
+                <Button fx:id="memberFineDetails" text="View fine details" disable="true" mnemonicParsing="false"
+                        maxWidth="-Infinity" styleClass="secondary-button"/>
+            </children>
+        </VBox>
+        <Label text="Amounts use your library's recorded currency units. This is a current record snapshot, not a receipt or a transaction ledger. Pay at the library desk; only staff can record a payment or waiver. Partial payments and online payments are not supported."
+               wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+        <Label text="Automatic overdue fines are PHP 20 per calendar day in Asia/Manila, starting the day after the due date, with no grace days or policy maximum. They stop on the return date. Checks run while an admin dashboard is open and catch up when it next opens. These are saved charges, not a live estimate; refresh after staff make a change."
+               wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+    </children>
+</VBox>
+

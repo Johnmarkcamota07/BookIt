@@ -4,11 +4,6 @@
  */
 package com.group1.bookit;
 
-/**
- *
- * @author John Mark
- */
-/** A read-only catalog row. ISBN remains null when it has not been supplied. */
 public record LibraryBook(
         String bookId,
         String title,

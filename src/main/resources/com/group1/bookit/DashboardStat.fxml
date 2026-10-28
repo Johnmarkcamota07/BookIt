@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      spacing="10.0" minWidth="0.0" prefWidth="220.0" maxWidth="1.7976931348623157E308"
+      styleClass="stat-card" stylesheets="@bookit-dashboard.css">
+    <children>
+        <Label fx:id="statTitle" wrapText="true" styleClass="stat-label"/>
+        <Label fx:id="statValue" wrapText="true" styleClass="stat-value"/>
+        <Label fx:id="statDetail" wrapText="true" styleClass="stat-detail"/>
+    </children>
+</VBox>
+

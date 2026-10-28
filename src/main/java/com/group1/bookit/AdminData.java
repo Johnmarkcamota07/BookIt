@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/** Immutable values transferred from a JDBC worker to the JavaFX thread. */
 public final class AdminData {
     private AdminData() {}
 

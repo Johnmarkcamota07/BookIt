@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      id="memberProfilePage" spacing="22.0" minWidth="0.0" prefWidth="760.0"
+      styleClass="member-profile-page" stylesheets="@bookit-dashboard.css">
+    <children>
+        <VBox id="profileAccountSection" spacing="16.0" minWidth="0.0" maxWidth="1.7976931348623157E308"
+              styleClass="section-card">
+            <children>
+                <Label text="My account" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+                <Label text="Loaded from your own database account. Identity and access fields are read-only."
+                       wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+                <GridPane id="profileAccountGrid" hgap="24.0" vgap="22.0" minWidth="0.0" styleClass="profile-grid">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="50.0" minWidth="0.0"/>
+                        <ColumnConstraints percentWidth="50.0" minWidth="0.0"/>
+                    </columnConstraints>
+                    <children>
+                        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                            <children>
+                                <Label text="USERNAME" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                                <Label fx:id="profileUsername" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+                            </children>
+                        </VBox>
+                        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                            <children>
+                                <Label text="MEMBER ID" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                                <Label fx:id="profileMemberId" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+                            </children>
+                        </VBox>
+                        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                            <children>
+                                <Label text="ROLE" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                                <Label fx:id="profileRole" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+                            </children>
+                        </VBox>
+                        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                            <children>
+                                <Label text="ACCOUNT STATUS" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                                <Label fx:id="profileStatus" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+                            </children>
+                        </VBox>
+                        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                            <children>
+                                <Label text="JOINED" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                                <Label fx:id="profileJoined" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+                            </children>
+                        </VBox>
+                        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                            <children>
+                                <Label text="ACCOUNT LAST UPDATED" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                                <Label fx:id="profileUpdated" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+                            </children>
+                        </VBox>
+                        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field"
+                              GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2">
+                            <children>
+                                <Label text="LAST LOGIN" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                                <Label fx:id="profileLastLogin" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+                            </children>
+                        </VBox>
+                    </children>
+                </GridPane>
+            </children>
+        </VBox>
+        <VBox id="profileContactSection" spacing="16.0" minWidth="0.0" maxWidth="1.7976931348623157E308"
+              styleClass="section-card">
+            <children>
+                <Label text="Contact details" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+                <Label text="Edit your full name, email, and optional phone number. Changes are saved only when you choose Save changes."
+                       wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+                <VBox spacing="7.0" minWidth="0.0">
+                    <children>
+                        <Label text="FULL NAME" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                        <TextField fx:id="profileFullName" promptText="Full name (required)" accessibleText="Full name (required)"
+                                   minWidth="0.0" maxWidth="1.7976931348623157E308" styleClass="search-field"/>
+                    </children>
+                </VBox>
+                <VBox spacing="7.0" minWidth="0.0">
+                    <children>
+                        <Label text="EMAIL" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                        <TextField fx:id="profileEmail" promptText="Email address (required)" accessibleText="Email address (required)"
+                                   minWidth="0.0" maxWidth="1.7976931348623157E308" styleClass="search-field"/>
+                    </children>
+                </VBox>
+                <VBox spacing="7.0" minWidth="0.0">
+                    <children>
+                        <Label text="PHONE" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                        <TextField fx:id="profilePhone" promptText="Phone number (optional)" accessibleText="Phone number (optional)"
+                                   minWidth="0.0" maxWidth="1.7976931348623157E308" styleClass="search-field"/>
+                    </children>
+                </VBox>
+                <HBox spacing="12.0">
+                    <children>
+                        <Button fx:id="profileSave" text="Save changes" disable="true" mnemonicParsing="false"
+                                maxWidth="-Infinity" styleClass="primary-button"/>
+                        <Button fx:id="profileReset" text="Reset fields" disable="true" mnemonicParsing="false"
+                                maxWidth="-Infinity" styleClass="secondary-button"/>
+                        <Button fx:id="profileRefresh" text="Refresh" mnemonicParsing="false"
+                                maxWidth="-Infinity" styleClass="secondary-button"/>
+                    </children>
+                </HBox>
+                <Label fx:id="profileFeedback" wrapText="true" minHeight="-Infinity"
+                       visible="false" managed="false" styleClass="section-note"/>
+                <Label text="Name: up to 150 characters. Email: up to 255 characters. Phone: up to 30 characters; clear it to remove it. Email format is checked, but mailbox ownership is not verified."
+                       wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+            </children>
+        </VBox>
+        <VBox id="profileSecuritySection" spacing="16.0" minWidth="0.0" maxWidth="1.7976931348623157E308"
+              styleClass="section-card">
+            <children>
+                <Label text="Account security" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+                <Label text="Changing your password requires your current password."
+                       wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+                <Button fx:id="memberChangePassword" text="Change password" mnemonicParsing="false"
+                        maxWidth="-Infinity" styleClass="secondary-button"/>
+                <Label text="A successful password change revokes your saved QR login credential and signs out this app session. Sign in with the new password, then generate a replacement QR if needed."
+                       wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+            </children>
+        </VBox>
+        <VBox id="profileQrSection" spacing="16.0" minWidth="0.0" maxWidth="1.7976931348623157E308"
+              styleClass="section-card">
+            <children>
+                <Label text="My library QR" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+                <Label text="Keep your QR private; it may grant access to your library account."
+                       wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+                <VBox spacing="10.0" styleClass="qr-placeholder">
+                    <children>
+                        <Label text="YOUR LIBRARY QR" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                        <Label text="Generate / replace your QR" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+                        <Label text="Confirm your current password to create a reusable QR and save it as PNG. Generation immediately invalidates your previous QR. A database hash cannot recreate an earlier QR image."
+                               wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+                    </children>
+                </VBox>
+                <Button fx:id="profileGenerateQr" text="Generate / replace my QR" mnemonicParsing="false"
+                        maxWidth="-Infinity" styleClass="primary-button"/>
+            </children>
+        </VBox>
+        <Label text="The QR window requires the database connection. Passwords and raw tokens are not shown as text. The QR image itself is a secret; keep it private."
+               wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+    </children>
+</VBox>
+

@@ -3,6 +3,7 @@ package com.group1.bookit;
 import com.group1.bookit.AuthenticationService.AuthenticatedUser;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URL;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -28,6 +29,7 @@ import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.image.ImageView;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -38,9 +40,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Window;
 import javafx.stage.Stage;
@@ -136,7 +135,6 @@ public final class UserDashboardController implements DashboardView {
     @FXML
     private void initialize() {
         LogoSupport.install(sidebarLogo);
-        // Navigation sets root.disable itself during logout, so do not bind it.
         saving.addListener((observable, before, busy) -> root.setDisable(busy));
         root.sceneProperty().addListener((observable, before, scene) -> {
             if (scene != null) {
@@ -144,7 +142,6 @@ public final class UserDashboardController implements DashboardView {
                 guardClosing(scene.getWindow());
             }
         });
-        // Navigation supplies identity AFTER FXMLLoader.load(), before SessionManager.login().
         addNavigation("Overview");
         addNavigation("Book catalog");
         addNavigation("My loans");
@@ -264,28 +261,46 @@ public final class UserDashboardController implements DashboardView {
         List<LibraryLoan> active = data.loans().stream().filter(LibraryLoan::isOpen).toList();
         long overdue = active.stream().filter(loan -> loan.isOverdue(now)).count();
         long availableTitles = data.books().stream().filter(book -> book.availableCopies() > 0).count();
-        VBox hero = section("Find your next good read",
-                "Explore the catalog, keep track of your books, and plan your next visit.",
-                row(button("Explore the catalog", "primary-button", () -> showPage("Book catalog")),
-                    button("View my loans", "secondary-button", () -> showPage("My loans")),
-                    refreshButton()));
-        hero.getStyleClass().add("hero-card");
-
-        HBox statistics = row(
-                stat("MY ACTIVE LOANS", String.valueOf(active.size()), "Unreturned copies on your account", "blue"),
-                stat("OVERDUE", String.valueOf(overdue), "Open loans past their due time", "orange"),
-                stat("AVAILABLE TITLES", String.valueOf(availableTitles), "Catalog titles with an available copy", "green"));
-
+        final VBox overviewPage;
+        final VBox loansHost;
+        final Label emptyLoans;
+        final Button catalog;
+        final Button myLoans;
+        final Button refresh;
+        final Button history;
+        try {
+            URL location = getClass().getResource("/com/group1/bookit/MemberOverview.fxml");
+            if (location == null) throw new IOException("MemberOverview.fxml is missing.");
+            FXMLLoader view = new FXMLLoader(location);
+            overviewPage = view.load();
+            pageControl(view, "overviewActiveLoans", Label.class).setText(String.valueOf(active.size()));
+            pageControl(view, "overviewOverdueLoans", Label.class).setText(String.valueOf(overdue));
+            pageControl(view, "overviewAvailableTitles", Label.class).setText(String.valueOf(availableTitles));
+            pageControl(view, "overviewLoansSubtitle", Label.class).setText(zoneNote() + " · Loaded for your member ID only.");
+            loansHost = pageControl(view, "overviewLoansHost", VBox.class);
+            emptyLoans = pageControl(view, "overviewEmptyLoansLabel", Label.class);
+            catalog = pageControl(view, "overviewExploreCatalog", Button.class);
+            myLoans = pageControl(view, "overviewViewLoans", Button.class);
+            refresh = pageControl(view, "overviewRefresh", Button.class);
+            history = pageControl(view, "overviewHistory", Button.class);
+        } catch (IOException | ClassCastException unavailable) {
+            setDataMode("OVERVIEW UNAVAILABLE", "offline-badge");
+            contentBox.getChildren().setAll(section("Overview screen unavailable", null,
+                    label("The overview layout could not be loaded. Keep MemberOverview.fxml in the bookit resource folder, then Clean and Build.", "error-note")));
+            return;
+        }
         TableView<ObservableList<String>> loans = table(
                 new String[]{"Book", "Copy barcode", "Due date", "Status"},
                 active.stream().map(loan -> new String[]{
                     display(loan.bookTitle()), display(loan.barcode()), format(loan.dueAt()), loan.status(now)
                 }).toArray(String[][]::new));
-        loans.setPlaceholder(label("You have no current loans.", "muted"));
-        contentBox.getChildren().addAll(hero, statistics,
-                section("Your current loans", zoneNote() + " · Loaded for your member ID only.",
-                        loans, button("See borrowing history", "secondary-button", () -> showPage("My loans"))),
-                note("Reserve titles from the catalog, manage requests in Reservations, and check recorded balances in My fines. Update your contact details or generate a personal QR from My profile & QR."));
+        loans.setPlaceholder(emptyLoans);
+        loansHost.getChildren().add(loans);
+        catalog.setOnAction(event -> showPage("Book catalog"));
+        myLoans.setOnAction(event -> showPage("My loans"));
+        refresh.setOnAction(event -> retryCurrentPage());
+        history.setOnAction(event -> showPage("My loans"));
+        contentBox.getChildren().add(overviewPage);
     }
 
     private void loadCatalog() {
@@ -294,7 +309,36 @@ public final class UserDashboardController implements DashboardView {
         load("Loading the book catalog…", () -> List.copyOf(repository.findBooks(actor)), this::renderCatalog);
     }
 
+    @SuppressWarnings("unchecked") 
     private void renderCatalog(List<LibraryBook> books) {
+        final VBox catalogPage;
+        final VBox tableHost;
+        final TextField search;
+        final ComboBox<String> category;
+        final Label count;
+        final Label placeholder;
+        final Button details;
+        final Button reserve;
+        final Button refresh;
+        try {
+            URL location = getClass().getResource("/com/group1/bookit/MemberCatalog.fxml");
+            if (location == null) throw new IOException("MemberCatalog.fxml is missing.");
+            FXMLLoader view = new FXMLLoader(location);
+            catalogPage = view.load();
+            tableHost = pageControl(view, "catalogTableHost", VBox.class);
+            search = pageControl(view, "catalogSearch", TextField.class);
+            category = pageControl(view, "catalogCategory", ComboBox.class);
+            count = pageControl(view, "catalogCount", Label.class);
+            placeholder = pageControl(view, books.isEmpty() ? "catalogEmptyLabel" : "catalogNoMatchesLabel", Label.class);
+            details = pageControl(view, "catalogDetails", Button.class);
+            reserve = pageControl(view, "catalogReserve", Button.class);
+            refresh = pageControl(view, "catalogRefresh", Button.class);
+        } catch (IOException | ClassCastException unavailable) {
+            setDataMode("CATALOG UNAVAILABLE", "offline-badge");
+            contentBox.getChildren().setAll(section("Catalog screen unavailable", null,
+                    label("The catalog layout could not be loaded. Keep MemberCatalog.fxml in the bookit resource folder, then Clean and Build.", "error-note")));
+            return;
+        }
         TableView<ObservableList<String>> catalog = table(
                 new String[]{"Book ID", "Title", "Author(s)", "Category", "ISBN", "Copies available"},
                 books.stream().map(book -> new String[]{
@@ -303,30 +347,21 @@ public final class UserDashboardController implements DashboardView {
                     book.availableCopies() + " / " + book.totalCopies()
                 }).toArray(String[][]::new));
         catalog.setPrefHeight(360);
-        catalog.setPlaceholder(label(books.isEmpty() ? "No books are recorded in the catalog."
-                : "No books match your search and category.", "muted"));
+        catalog.setPlaceholder(placeholder);
         FilteredList<ObservableList<String>> filtered = new FilteredList<>(
                 FXCollections.observableArrayList(catalog.getItems()));
         SortedList<ObservableList<String>> sorted = new SortedList<>(filtered);
         sorted.comparatorProperty().bind(catalog.comparatorProperty());
         catalog.setItems(sorted);
 
-        TextField search = new TextField();
-        search.setPromptText("Search title, author, ISBN, or book ID…");
-        search.setAccessibleText("Search catalog by title, author, ISBN, or book ID");
-        search.getStyleClass().add("search-field");
-        HBox.setHgrow(search, Priority.ALWAYS);
-
         TreeSet<String> categories = new TreeSet<>();
         books.forEach(book -> categories.add(categoryName(book)));
         List<String> categoryItems = new ArrayList<>();
         categoryItems.add("All categories");
         categoryItems.addAll(categories);
-        ComboBox<String> category = new ComboBox<>(FXCollections.observableArrayList(categoryItems));
+        category.setItems(FXCollections.observableArrayList(categoryItems));
         category.getSelectionModel().selectFirst();
-        category.setPrefWidth(185);
-        category.setAccessibleText("Filter books by category");
-        Label count = label(books.size() + " books", "muted");
+        count.setText(books.size() + " books");
         Runnable filter = () -> {
             String query = search.getText().strip().toLowerCase(Locale.ROOT);
             String selectedCategory = category.getValue();
@@ -338,40 +373,48 @@ public final class UserDashboardController implements DashboardView {
         search.textProperty().addListener((observable, oldValue, newValue) -> filter.run());
         category.valueProperty().addListener((observable, oldValue, newValue) -> filter.run());
 
-        Button details = button("View book details", "secondary-button", () -> {
+        details.setOnAction(event -> {
             ObservableList<String> selected = catalog.getSelectionModel().getSelectedItem();
             if (selected == null) return;
             LibraryBook book = books.stream().filter(item -> String.valueOf(item.bookId()).equals(selected.get(0)))
                     .findFirst().orElse(null);
             if (book == null) return;
-            detailDialog(root, "Book details", page(
-                    label(display(book.title()), "section-title"),
-                    label("By " + display(book.authors()), "muted"),
-                    field("BOOK ID", String.valueOf(book.bookId())),
-                    field("CATEGORY", categoryName(book)),
-                    field("ISBN", display(book.isbn())),
-                    field("AVAILABLE / TOTAL COPIES", book.availableCopies() + " / " + book.totalCopies()),
-                    note("Availability is a snapshot. Use Reserve selected book in the catalog to request this title.")),
-                    "Read-only catalog record");
+            showBookDetails(book);
         });
         details.disableProperty().bind(catalog.getSelectionModel().selectedItemProperty().isNull());
-        Button reserve = button("Reserve selected book", "primary-button", () -> {
+        reserve.setOnAction(event -> {
             ObservableList<String> selected = catalog.getSelectionModel().getSelectedItem();
             if (selected == null) return;
             books.stream().filter(book -> book.bookId().equals(selected.get(0)))
                     .findFirst().ifPresent(this::reserveBook);
         });
-        // Availability does not decide eligibility: the service checks the latest
-        // title/copy, duplicate-request, and unreturned-loan state transactionally.
         reserve.disableProperty().bind(catalog.getSelectionModel().selectedItemProperty().isNull());
 
-        HBox filters = new HBox(12, search, category, refreshButton());
-        filters.getStyleClass().add("toolbar");
-        contentBox.getChildren().addAll(
-                section("Browse the shelves", "Titles, authors, categories, and copy counts come from MySQL.",
-                        filters, count, catalog,
-                        row(details, reserve)),
-                note("Select a title to reserve it, even when copies are currently available. Eligibility is checked when you confirm. A request joins the title queue; it does not hold a specific physical copy."));
+        refresh.setOnAction(event -> retryCurrentPage());
+        tableHost.getChildren().add(catalog);
+        contentBox.getChildren().add(catalogPage);
+    }
+
+    private void showBookDetails(LibraryBook book) {
+        final VBox detailsPage;
+        try {
+            URL location = getClass().getResource("/com/group1/bookit/MemberBookDetails.fxml");
+            if (location == null) throw new IOException("MemberBookDetails.fxml is missing.");
+            FXMLLoader view = new FXMLLoader(location);
+            detailsPage = view.load();
+            pageControl(view, "catalogBookTitle", Label.class).setText(display(book.title()));
+            pageControl(view, "catalogBookAuthors", Label.class).setText("By " + display(book.authors()));
+            pageControl(view, "catalogBookId", Label.class).setText(String.valueOf(book.bookId()));
+            pageControl(view, "catalogBookCategory", Label.class).setText(categoryName(book));
+            pageControl(view, "catalogBookIsbn", Label.class).setText(display(book.isbn()));
+            pageControl(view, "catalogBookCopies", Label.class).setText(book.availableCopies() + " / " + book.totalCopies());
+        } catch (IOException | ClassCastException unavailable) {
+            detailDialog(root, "Book details unavailable",
+                    note("The book details layout could not be loaded. Keep MemberBookDetails.fxml in the bookit resource folder, then Clean and Build."),
+                    "Book details screen unavailable");
+            return;
+        }
+        detailDialog(root, "Book details", detailsPage, "Read-only catalog record");
     }
 
     private void reserveBook(LibraryBook book) {
@@ -400,7 +443,6 @@ public final class UserDashboardController implements DashboardView {
     }
 
     private void renderLoans(LoansData data) {
-        loanSnapshot = data;
         List<LibraryLoan> loans = data.loans();
         Instant now = Instant.now();
         List<LibraryLoan> active = loans.stream().filter(LibraryLoan::isOpen).toList();
@@ -408,6 +450,39 @@ public final class UserDashboardController implements DashboardView {
         long overdue = active.stream().filter(loan -> loan.isOverdue(now)).count();
         var renewed = data.renewals().stream().map(LoanRenewal::loanId)
                 .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        final VBox loansPage;
+        final VBox currentHost;
+        final VBox returnedHost;
+        final VBox renewalHost;
+        final TextField search;
+        final Button renew;
+        final Button refresh;
+        final Label placeholder;
+        try {
+            FXMLLoader view = memberLayout("MemberLoans.fxml");
+            loansPage = view.getRoot();
+            currentHost = pageControl(view, "memberCurrentLoansHost", VBox.class);
+            returnedHost = pageControl(view, "memberReturnedLoansHost", VBox.class);
+            renewalHost = pageControl(view, "memberRenewalHistoryHost", VBox.class);
+            search = pageControl(view, "memberLoanSearch", TextField.class);
+            renew = pageControl(view, "memberLoanRenew", Button.class);
+            refresh = pageControl(view, "memberLoanRefresh", Button.class);
+            placeholder = pageControl(view, active.isEmpty() ? "memberEmptyCurrentLoans" : "memberNoMatchingLoans", Label.class);
+            pageControl(view, "memberActiveLoanCount", Label.class).setText(String.valueOf(active.size()));
+            pageControl(view, "memberOverdueLoanCount", Label.class).setText(String.valueOf(overdue));
+            pageControl(view, "memberReturnedLoanCount", Label.class).setText(String.valueOf(returned.size()));
+            pageControl(view, "memberCurrentLoanSubtitle", Label.class).setText("Only records for your authenticated member ID are loaded. " + zoneNote());
+            pageControl(view, "memberReturnedLoanSubtitle", Label.class).setText("Loans that have a recorded return time. " + zoneNote());
+            pageControl(view, "memberRenewalHistorySubtitle", Label.class).setText("Saved receipts for your member account. " + zoneNote());
+        } catch (IOException | ClassCastException unavailable) {
+            loanSnapshot = null;
+            setDataMode("LOANS UNAVAILABLE", "offline-badge");
+            contentBox.getChildren().setAll(section("Loans screen unavailable", null,
+                    label("The loans layout could not be loaded. Keep MemberLoans.fxml in the bookit resource folder, then Clean and Build.", "error-note")));
+            addRenewalNotice(false);
+            return;
+        }
+        loanSnapshot = data;
         TableView<ObservableList<String>> current = table(
                 new String[]{"Loan ID", "Book", "Copy barcode", "Due date", "Status", "Renewal"},
                 active.stream().map(loan -> new String[]{
@@ -426,61 +501,42 @@ public final class UserDashboardController implements DashboardView {
             column.setMinWidth(i == 1 ? 110 : loanWidths[i]);
             if (i != 1) column.setMaxWidth(loanWidths[i]);
         }
-        current.setPlaceholder(label(active.isEmpty() ? "You have no current loans."
-                : "No loans match your search.", "muted"));
+        current.setPlaceholder(placeholder);
         FilteredList<ObservableList<String>> filtered = new FilteredList<>(
                 FXCollections.observableArrayList(current.getItems()));
         SortedList<ObservableList<String>> sorted = new SortedList<>(filtered);
         sorted.comparatorProperty().bind(current.comparatorProperty());
         current.setItems(sorted);
-        TextField search = new TextField();
-        search.setId("memberLoanSearch");
-        search.setPromptText("Search your current loans…");
-        search.setAccessibleText("Search your current loans by title, loan ID or copy barcode");
-        search.getStyleClass().add("search-field");
-        HBox.setHgrow(search, Priority.ALWAYS);
         search.textProperty().addListener((observable, before, after) -> {
             String query = after.strip().toLowerCase(Locale.ROOT);
             filtered.setPredicate(loan -> loan.stream()
                     .anyMatch(value -> value.toLowerCase(Locale.ROOT).contains(query)));
         });
-        Button renew = button("Renew selected loan", "primary-button", () -> {
+        renew.setOnAction(event -> {
             ObservableList<String> selected = current.getSelectionModel().getSelectedItem();
             if (selected == null) return;
             active.stream().filter(loan -> loan.loanId().equals(selected.get(0)))
                     .findFirst().ifPresent(loan -> renewLoan(data, loan));
         });
-        renew.setId("memberLoanRenew");
-        renew.setDisable(true);
-        // The displayed clock/status is not authorization. Only the service's
-        // server clock and current fine/reservation reads decide eligibility.
+
         current.getSelectionModel().selectedItemProperty().addListener((observable, before, selected) ->
                 renew.setDisable(selected == null || renewed.contains(selected.get(0))));
-        Button refresh = refreshButton();
-        refresh.setId("memberLoanRefresh");
+        refresh.setOnAction(event -> retryCurrentPage());
+        currentHost.getChildren().add(current);
+        returnedHost.getChildren().add(searchableTable("Search returned loans…",
+                new String[]{"Loan ID", "Book", "Copy barcode", "Borrowed", "Due date", "Returned", "Status"},
+                returned.stream().map(loan -> new String[]{
+                    String.valueOf(loan.loanId()), display(loan.bookTitle()), display(loan.barcode()),
+                    format(loan.borrowedAt()), format(loan.dueAt()), format(loan.returnedAt()), loan.status(now)
+                }).toArray(String[][]::new), false));
+        renewalHost.getChildren().add(table(new String[]{"Loan ID", "Book", "Copy barcode", "Previous due", "New due", "Renewed"},
+                data.renewals().stream().map(receipt -> new String[]{
+                    receipt.loanId(), display(receipt.bookTitle()), display(receipt.barcode()),
+                    format(receipt.previousDueAt()), format(receipt.newDueAt()), format(receipt.renewedAt())
+                }).toArray(String[][]::new)));
+        contentBox.getChildren().add(loansPage);
+        // Insert after the page so an acknowledged receipt remains the first card.
         addRenewalNotice(true);
-
-        contentBox.getChildren().addAll(
-                row(stat("ACTIVE LOANS", String.valueOf(active.size()), "Copies not yet returned", "blue"),
-                    stat("OVERDUE", String.valueOf(overdue), "Open loans past their due time", "orange"),
-                    stat("RETURNED", String.valueOf(returned.size()), "Completed loans in your account", "green")),
-                section("Current borrowing", "Only records for your authenticated member ID are loaded. " + zoneNote(),
-                        new HBox(12, search, refresh), current, renew,
-                        note("One renewal per loan adds 7 days to its current due date. You must renew before the deadline, have no positive unpaid fines, and have no other member waiting for this title. The database checks these rules when you confirm.")),
-                section("Borrowing history", "Loans that have a recorded return time. " + zoneNote(),
-                        searchableTable("Search returned loans…",
-                                new String[]{"Loan ID", "Book", "Copy barcode", "Borrowed", "Due date", "Returned", "Status"},
-                                returned.stream().map(loan -> new String[]{
-                                    String.valueOf(loan.loanId()), display(loan.bookTitle()), display(loan.barcode()),
-                                    format(loan.borrowedAt()), format(loan.dueAt()), format(loan.returnedAt()), loan.status(now)
-                                }).toArray(String[][]::new), false)),
-                section("Renewal history", "Saved receipts for your member account. " + zoneNote(),
-                        table(new String[]{"Loan ID", "Book", "Copy barcode", "Previous due", "New due", "Renewed"},
-                                data.renewals().stream().map(receipt -> new String[]{
-                                    receipt.loanId(), display(receipt.bookTitle()), display(receipt.barcode()),
-                                    format(receipt.previousDueAt()), format(receipt.newDueAt()), format(receipt.renewedAt())
-                                }).toArray(String[][]::new))),
-                note("An empty table means no matching records were returned; database failures are shown separately, not as empty loans. Refresh after staff change a loan."));
     }
 
     private void renewLoan(LoansData expected, LibraryLoan loan) {
@@ -544,20 +600,39 @@ public final class UserDashboardController implements DashboardView {
 
     private void addRenewalNotice(boolean consume) {
         if (!"My loans".equals(currentPage) || renewalMessage == null) return;
-        Label notice = label(renewalMessage, "section-note");
-        notice.setId("memberLoanFeedback");
-        contentBox.getChildren().add(0, section("Renewal result", null, notice));
+        VBox noticeCard;
+        try {
+            FXMLLoader view = memberLayout("MemberLoanNotice.fxml");
+            noticeCard = view.getRoot();
+            pageControl(view, "memberLoanFeedback", Label.class).setText(renewalMessage);
+        } catch (IOException | ClassCastException unavailable) {
+            // A missing decoration must never hide an acknowledged renewal receipt.
+            Label notice = label(renewalMessage, "section-note");
+            notice.setId("memberLoanFeedback");
+            noticeCard = section("Renewal result", null, notice);
+        }
+        contentBox.getChildren().add(0, noticeCard);
         if (consume) renewalMessage = null;
     }
 
     private void showRenewalRecovery() {
         setDataMode("RENEWAL NEEDS REFRESH", "offline-badge");
         pageSubtitleLabel.setText("Review your loans and saved renewal receipts before another renewal.");
-        Button refresh = button("Refresh", "primary-button", this::refreshRenewalAfterFailure);
-        refresh.setId("memberLoanRefresh");
-        contentBox.getChildren().setAll(section("Renewal needs review", null,
-                label(renewalRecoveryMessage, "error-note"),
-                note("No renewal is repeated automatically. Refresh only reads your current loans and renewal history, including the request receipt if the save completed."), refresh));
+        VBox recoveryCard;
+        try {
+            FXMLLoader view = memberLayout("MemberLoanRecovery.fxml");
+            recoveryCard = view.getRoot();
+            pageControl(view, "memberLoanRecoveryMessage", Label.class).setText(renewalRecoveryMessage);
+            pageControl(view, "memberLoanRefresh", Button.class).setOnAction(event -> refreshRenewalAfterFailure());
+        } catch (IOException | ClassCastException unavailable) {
+            // Retain the safe read-only recovery route even if its template is missing.
+            Button refresh = button("Refresh", "primary-button", this::refreshRenewalAfterFailure);
+            refresh.setId("memberLoanRefresh");
+            recoveryCard = section("Renewal needs review", null,
+                    label(renewalRecoveryMessage, "error-note"),
+                    note("No renewal is repeated automatically. Refresh only reads your current loans and renewal history, including the request receipt if the save completed."), refresh);
+        }
+        contentBox.getChildren().setAll(recoveryCard);
     }
 
     private void refreshRenewalAfterFailure() {
@@ -594,8 +669,7 @@ public final class UserDashboardController implements DashboardView {
         setDataMode("CONNECTING…", "loading-badge");
         contentBox.getChildren().setAll(section("Loading database records", null,
                 label(loadingText, "loading-note")));
-        if (successMessage != null) contentBox.getChildren().add(0,
-                section("Saved successfully", null, label(successMessage, "section-note")));
+        addReservationNotice(false);
         addRenewalNotice(false);
         dataLoader.load(query, result -> {
             contentBox.getChildren().clear();
@@ -611,8 +685,7 @@ public final class UserDashboardController implements DashboardView {
                         retryCurrentPage();
                     }),
                     note("No sample records are substituted. This read did not change database records.")));
-            if (successMessage != null) contentBox.getChildren().add(0,
-                    section("Saved successfully", null, label(successMessage, "section-note")));
+            addReservationNotice(false);
             addRenewalNotice(false);
         });
     }
@@ -659,6 +732,34 @@ public final class UserDashboardController implements DashboardView {
     }
 
     private void renderReservations(List<LibraryReservation> records) {
+        final VBox reservationPage;
+        final TextField search;
+        final Label count;
+        final Button cancel;
+        final Button refresh;
+        final Button browse;
+        final VBox tableHost;
+        final Label placeholder;
+        try {
+            FXMLLoader view = memberLayout("MemberReservations.fxml");
+            reservationPage = view.getRoot();
+            pageControl(view, "memberReservationSubtitle", Label.class).setText(
+                    "Only requests for your authenticated member ID are loaded. " + zoneNote());
+            search = pageControl(view, "memberReservationSearch", TextField.class);
+            count = pageControl(view, "memberReservationCount", Label.class);
+            cancel = pageControl(view, "memberReservationCancel", Button.class);
+            refresh = pageControl(view, "memberReservationRefresh", Button.class);
+            browse = pageControl(view, "memberReservationBrowse", Button.class);
+            tableHost = pageControl(view, "memberReservationTableHost", VBox.class);
+            placeholder = pageControl(view, records.isEmpty() ? "memberReservationEmpty"
+                    : "memberReservationNoMatches", Label.class);
+        } catch (IOException | ClassCastException unavailable) {
+            setDataMode("RESERVATIONS UNAVAILABLE", "offline-badge");
+            contentBox.getChildren().setAll(section("Reservations screen unavailable", null,
+                    label("The reservation layout could not be loaded. Keep MemberReservations.fxml in the bookit resource folder, then Clean and Build.", "error-note")));
+            addReservationNotice(false);
+            return;
+        }
         TableView<ObservableList<String>> requests = table(
                 new String[]{"Reservation ID", "Book ID", "Book", "Requested", "Status", "Queue position"},
                 records.stream().map(request -> new String[]{
@@ -667,8 +768,6 @@ public final class UserDashboardController implements DashboardView {
                     request.queuePosition() == null ? "—" : String.valueOf(request.queuePosition())
                 }).toArray(String[][]::new));
         requests.setPrefHeight(360);
-        // Preserve the complete request timestamp at the supported 1024px
-        // window width, giving title text the remaining flexible space.
         double[] widths = {110, 75, 210, 145, 95, 105};
         for (int i = 0; i < widths.length; i++) {
             var column = requests.getColumns().get(i);
@@ -676,26 +775,21 @@ public final class UserDashboardController implements DashboardView {
             column.setMinWidth(i == 2 ? 115 : widths[i]);
             if (i != 2) column.setMaxWidth(widths[i]);
         }
-        requests.setPlaceholder(label(records.isEmpty() ? "You have no reservation history."
-                : "No reservations match your search.", "muted"));
+        requests.setId("memberReservationTable");
+        requests.setPlaceholder(placeholder);
         FilteredList<ObservableList<String>> filtered = new FilteredList<>(
                 FXCollections.observableArrayList(requests.getItems()));
         SortedList<ObservableList<String>> sorted = new SortedList<>(filtered);
         sorted.comparatorProperty().bind(requests.comparatorProperty());
         requests.setItems(sorted);
-        TextField search = new TextField();
-        search.setPromptText("Search your reservations…");
-        search.setAccessibleText("Search your reservation history by title, request ID, or status");
-        search.getStyleClass().add("search-field");
-        HBox.setHgrow(search, Priority.ALWAYS);
-        Label count = label(records.size() + " reservations", "muted");
+        count.setText(records.size() + " reservations");
         search.textProperty().addListener((observable, before, after) -> {
             String query = after.strip().toLowerCase(Locale.ROOT);
             filtered.setPredicate(request -> request.stream()
                     .anyMatch(value -> value.toLowerCase(Locale.ROOT).contains(query)));
             count.setText(filtered.size() + " of " + records.size() + " reservations");
         });
-        Button cancel = button("Cancel reservation", "secondary-button", () -> {
+        cancel.setOnAction(event -> {
             ObservableList<String> selected = requests.getSelectionModel().getSelectedItem();
             if (selected == null) return;
             records.stream().filter(request -> request.reservationId().equals(selected.get(0)))
@@ -706,15 +800,25 @@ public final class UserDashboardController implements DashboardView {
                 cancel.setDisable(selected == null || records.stream()
                         .filter(request -> request.reservationId().equals(selected.get(0)))
                         .noneMatch(LibraryReservation::isActive)));
-        if (successMessage != null) {
-            contentBox.getChildren().add(section("Saved successfully", null, label(successMessage, "section-note")));
-            successMessage = null;
+        refresh.setOnAction(event -> retryCurrentPage());
+        browse.setOnAction(event -> showPage("Book catalog"));
+        tableHost.getChildren().setAll(requests);
+        contentBox.getChildren().add(reservationPage);
+        addReservationNotice(true);
+    }
+
+    private void addReservationNotice(boolean consume) {
+        if (successMessage == null) return;
+        VBox notice;
+        try {
+            FXMLLoader view = memberLayout("MemberReservationNotice.fxml");
+            notice = view.getRoot();
+            pageControl(view, "memberReservationFeedback", Label.class).setText(successMessage);
+        } catch (IOException | ClassCastException unavailable) {
+            notice = section("Saved successfully", null, label(successMessage, "section-note"));
         }
-        contentBox.getChildren().addAll(section("Your reservation queue and history",
-                "Only requests for your authenticated member ID are loaded. " + zoneNote(),
-                new HBox(12, search, refreshButton()), count, requests,
-                row(cancel, button("Browse the catalog", "secondary-button", () -> showPage("Book catalog")))),
-                note("PENDING and READY requests are active. Queue positions count all active requests for the title, ordered by request time and reservation ID. Completed requests have no position. READY does not reserve a physical copy; ask the library desk about collection."));
+        contentBox.getChildren().add(0, notice);
+        if (consume) successMessage = null;
     }
 
     private void cancelReservation(LibraryReservation request) {
@@ -764,10 +868,19 @@ public final class UserDashboardController implements DashboardView {
     private void showUnconfirmedAction() {
         setDataMode("ACTION NOT CONFIRMED · REFRESH", "offline-badge");
         pageSubtitleLabel.setText("Refresh your saved reservations before taking another reservation action.");
-        contentBox.getChildren().setAll(section("Reservation action not confirmed", null,
-                label(unconfirmedExplanation, "error-note"),
-                note("A connection can fail after a change is saved. Do not submit the action again until you refresh and check your history. No automatic retry is performed."),
-                refreshButton()));
+        try {
+            FXMLLoader view = memberLayout("MemberReservationRecovery.fxml");
+            pageControl(view, "memberReservationRecoveryMessage", Label.class).setText(unconfirmedExplanation);
+            pageControl(view, "memberReservationRecoveryRefresh", Button.class)
+                    .setOnAction(event -> retryCurrentPage());
+            contentBox.getChildren().setAll((VBox) view.getRoot());
+        } catch (IOException | ClassCastException unavailable) {
+            // Keep explicit read-only recovery available even if a layout is missing.
+            contentBox.getChildren().setAll(section("Reservation action not confirmed", null,
+                    label(unconfirmedExplanation, "error-note"),
+                    note("A connection can fail after a change is saved. Do not submit the action again until you refresh and check your history. No automatic retry is performed."),
+                    refreshButton()));
+        }
     }
 
     private void refreshUnconfirmedAction() {
@@ -792,7 +905,36 @@ public final class UserDashboardController implements DashboardView {
                 () -> List.copyOf(fines.findMyFines(actor)), this::renderFines);
     }
 
+    @SuppressWarnings("unchecked")
     private void renderFines(List<LibraryFine> records) {
+        final VBox finesPage;
+        final FXMLLoader view;
+        final TextField search;
+        final ComboBox<String> statusFilter;
+        final Label count;
+        final Button details;
+        final Button refresh;
+        final VBox tableHost;
+        final Label placeholder;
+        try {
+            view = memberLayout("MemberFines.fxml");
+            finesPage = view.getRoot();
+            search = pageControl(view, "memberFineSearch", TextField.class);
+            statusFilter = pageControl(view, "memberFineStatus", ComboBox.class);
+            count = pageControl(view, "memberFineCount", Label.class);
+            details = pageControl(view, "memberFineDetails", Button.class);
+            refresh = pageControl(view, "memberFineRefresh", Button.class);
+            tableHost = pageControl(view, "memberFineTableHost", VBox.class);
+            placeholder = pageControl(view, records.isEmpty() ? "memberFineEmpty"
+                    : "memberFineNoMatches", Label.class);
+            for (String id : List.of("memberFineOutstanding", "memberFinePaid", "memberFineWaived"))
+                pageControl(view, id, Label.class);
+        } catch (IOException | ClassCastException unavailable) {
+            setDataMode("FINES UNAVAILABLE", "offline-badge");
+            contentBox.getChildren().setAll(section("Fines screen unavailable", null,
+                    label("The fines layout could not be loaded. Keep MemberFines.fxml in the bookit resource folder, then Clean and Build.", "error-note")));
+            return;
+        }
         BigDecimal unpaid = BigDecimal.ZERO.setScale(2);
         BigDecimal paid = BigDecimal.ZERO.setScale(2);
         BigDecimal waived = BigDecimal.ZERO.setScale(2);
@@ -801,10 +943,9 @@ public final class UserDashboardController implements DashboardView {
             else if (fine.isPaid()) paid = paid.add(fine.amount());
             else if (fine.isWaived()) waived = waived.add(fine.amount());
         }
-        HBox totals = row(
-                fineStat("OUTSTANDING", unpaid, "Recorded UNPAID charges only", "orange", "memberFineOutstanding"),
-                fineStat("RECORDED PAID", paid, "Charges marked PAID by staff", "green", "memberFinePaid"),
-                fineStat("WAIVED", waived, "Waived charges are not owed", "blue", "memberFineWaived"));
+        ((Label) view.getNamespace().get("memberFineOutstanding")).setText(unpaid.toPlainString());
+        ((Label) view.getNamespace().get("memberFinePaid")).setText(paid.toPlainString());
+        ((Label) view.getNamespace().get("memberFineWaived")).setText(waived.toPlainString());
 
         TableView<ObservableList<String>> history = table(
                 new String[]{"Fine ID", "Loan ID", "Book", "Copy barcode", "Amount", "Status", "Paid at"},
@@ -823,29 +964,16 @@ public final class UserDashboardController implements DashboardView {
         history.getColumns().get(6).setComparator(Comparator.comparing(value ->
                 "—".equals(value.toString()) ? LocalDateTime.MIN
                         : LocalDateTime.parse(value.toString(), DATE_TIME)));
-        history.setPlaceholder(label(records.isEmpty() ? "No fine records are recorded for your account."
-                : "No fine records match your search and status.", "muted"));
+        history.setPlaceholder(placeholder);
         FilteredList<ObservableList<String>> filtered = new FilteredList<>(
                 FXCollections.observableArrayList(history.getItems()));
         SortedList<ObservableList<String>> sorted = new SortedList<>(filtered);
         sorted.comparatorProperty().bind(history.comparatorProperty());
         history.setItems(sorted);
 
-        TextField search = new TextField();
-        search.setId("memberFineSearch");
-        search.setPromptText("Search book, barcode, fine ID, or loan ID…");
-        search.setAccessibleText("Search your fine records");
-        search.getStyleClass().add("search-field");
-        search.setMinWidth(100);
-        HBox.setHgrow(search, Priority.ALWAYS);
-        ComboBox<String> statusFilter = new ComboBox<>(FXCollections.observableArrayList(
-                "All statuses", "UNPAID", "PAID", "WAIVED"));
-        statusFilter.setId("memberFineStatus");
-        statusFilter.setAccessibleText("Filter your fine records by payment status");
-        statusFilter.setPrefWidth(145);
+        statusFilter.setItems(FXCollections.observableArrayList("All statuses", "UNPAID", "PAID", "WAIVED"));
         statusFilter.getSelectionModel().selectFirst();
-        Label count = label(records.size() + " fine records", "muted");
-        count.setId("memberFineCount");
+        count.setText(records.size() + " fine records");
         Runnable filter = () -> {
             String query = search.getText().strip().toLowerCase(Locale.ROOT);
             String selectedStatus = statusFilter.getValue();
@@ -858,48 +986,41 @@ public final class UserDashboardController implements DashboardView {
         search.textProperty().addListener((observable, before, after) -> filter.run());
         statusFilter.valueProperty().addListener((observable, before, after) -> filter.run());
 
-        Button details = button("View fine details", "secondary-button", () -> {
+        details.setOnAction(event -> {
             ObservableList<String> selected = history.getSelectionModel().getSelectedItem();
             if (selected == null) return;
             records.stream().filter(fine -> fine.fineId().equals(selected.get(0)))
                     .findFirst().ifPresent(this::showFineDetails);
         });
-        details.setId("memberFineDetails");
         details.disableProperty().bind(history.getSelectionModel().selectedItemProperty().isNull());
-        Button refresh = refreshButton();
-        refresh.setId("memberFineRefresh");
-        contentBox.getChildren().addAll(totals,
-                section("Your fine records", "Only fines linked to your authenticated member ID are loaded."
-                        + " Summary totals include all your loaded records, regardless of filters.",
-                        new HBox(12, search, statusFilter, refresh), count, history, details),
-                note("Amounts use your library's recorded currency units. This is a current record snapshot, not a receipt or a transaction ledger. Pay at the library desk; only staff can record a payment or waiver. Partial payments and online payments are not supported."),
-                note("Automatic overdue fines are PHP 20 per calendar day in Asia/Manila, starting the day after the due date, with no grace days or policy maximum. They stop on the return date. Checks run while an admin dashboard is open and catch up when it next opens. These are saved charges, not a live estimate; refresh after staff make a change."));
-    }
-
-    private VBox fineStat(String title, BigDecimal amount, String detail, String accent, String id) {
-        Label value = label(amount.toPlainString(), "stat-value");
-        value.setId(id);
-        VBox card = new VBox(10, label(title, "stat-label"), value, label(detail, "stat-detail"));
-        card.getStyleClass().addAll("stat-card", "accent-" + accent);
-        card.setMinWidth(0);
-        card.setPrefWidth(220);
-        card.setMaxWidth(Double.MAX_VALUE);
-        return card;
+        refresh.setOnAction(event -> retryCurrentPage());
+        tableHost.getChildren().setAll(history);
+        contentBox.getChildren().add(finesPage);
     }
 
     private void showFineDetails(LibraryFine fine) {
-        detailDialog(root, "Fine details", page(
-                field("FINE ID / LOAN ID", fine.fineId() + " / " + fine.loanId()),
-                field("BOOK", display(fine.bookTitle())),
-                field("COPY BARCODE", display(fine.barcode())),
-                field("RECORDED AMOUNT", fine.amount().toPlainString()),
-                field("PAYMENT STATUS", fine.paymentStatus()),
-                field("BORROWED", format(fine.borrowedAt())),
-                field("DUE", format(fine.dueAt())),
-                field("RETURNED", format(fine.returnedAt())),
-                field("PAID AT", format(fine.paidAt())),
-                note(zoneNote() + ". No fine creation date is stored in the current schema."),
-                note("A waived charge is not owed; its original amount remains recorded. Contact the library desk about a charge or payment.")),
+        final VBox detailsPage;
+        try {
+            FXMLLoader view = memberLayout("MemberFineDetails.fxml");
+            detailsPage = view.getRoot();
+            pageControl(view, "memberFineIdentity", Label.class).setText(fine.fineId() + " / " + fine.loanId());
+            pageControl(view, "memberFineBook", Label.class).setText(display(fine.bookTitle()));
+            pageControl(view, "memberFineBarcode", Label.class).setText(display(fine.barcode()));
+            pageControl(view, "memberFineAmount", Label.class).setText(fine.amount().toPlainString());
+            pageControl(view, "memberFinePaymentStatus", Label.class).setText(fine.paymentStatus());
+            pageControl(view, "memberFineBorrowed", Label.class).setText(format(fine.borrowedAt()));
+            pageControl(view, "memberFineDue", Label.class).setText(format(fine.dueAt()));
+            pageControl(view, "memberFineReturned", Label.class).setText(format(fine.returnedAt()));
+            pageControl(view, "memberFinePaidAt", Label.class).setText(format(fine.paidAt()));
+            pageControl(view, "memberFineZoneNote", Label.class).setText(
+                    zoneNote() + ". No fine creation date is stored in the current schema.");
+        } catch (IOException | ClassCastException unavailable) {
+            detailDialog(root, "Fine details unavailable",
+                    note("The fine details layout could not be loaded. Keep MemberFineDetails.fxml in the bookit resource folder, then Clean and Build."),
+                    "Fine details screen unavailable");
+            return;
+        }
+        detailDialog(root, "Fine details", detailsPage,
                 "Read-only record from your account · Refresh for updates");
     }
 
@@ -911,42 +1032,54 @@ public final class UserDashboardController implements DashboardView {
     }
 
     private void renderProfile(MemberProfile profile, String message) {
+        final VBox profilePage;
+        final TextField fullName;
+        final TextField email;
+        final TextField phone;
+        final Label feedback;
+        final Button save;
+        final Button reset;
+        final Button refresh;
+        final Button changePassword;
+        final Button generateQr;
+        try {
+            URL location = getClass().getResource("/com/group1/bookit/MemberProfile.fxml");
+            if (location == null) throw new IOException("MemberProfile.fxml is missing.");
+            FXMLLoader view = new FXMLLoader(location);
+            profilePage = view.load();
+            pageControl(view, "profileUsername", Label.class).setText(display(profile.username()));
+            pageControl(view, "profileMemberId", Label.class).setText(display(profile.userId()));
+            pageControl(view, "profileRole", Label.class).setText(display(profile.role()));
+            pageControl(view, "profileStatus", Label.class).setText(display(profile.status()));
+            pageControl(view, "profileJoined", Label.class).setText(format(profile.joinedAt()));
+            pageControl(view, "profileUpdated", Label.class).setText(format(profile.updatedAt()));
+            pageControl(view, "profileLastLogin", Label.class).setText(format(profile.lastLoginAt()));
+            fullName = pageControl(view, "profileFullName", TextField.class);
+            email = pageControl(view, "profileEmail", TextField.class);
+            phone = pageControl(view, "profilePhone", TextField.class);
+            feedback = pageControl(view, "profileFeedback", Label.class);
+            save = pageControl(view, "profileSave", Button.class);
+            reset = pageControl(view, "profileReset", Button.class);
+            refresh = pageControl(view, "profileRefresh", Button.class);
+            changePassword = pageControl(view, "memberChangePassword", Button.class);
+            generateQr = pageControl(view, "profileGenerateQr", Button.class);
+        } catch (IOException | ClassCastException unavailable) {
+            profileSnapshot = null;
+            profileDirty = false;
+            setDataMode("PROFILE UNAVAILABLE", "offline-badge");
+            contentBox.getChildren().setAll(section("Profile screen unavailable", null,
+                    label("The profile layout could not be loaded. Keep MemberProfile.fxml in the bookit resource folder, then Clean and Build.", "error-note")));
+            return;
+        }
         profileSnapshot = profile;
         profileDirty = false;
         pageSubtitleLabel.setText("Your account, contact details, and personal library QR. " + zoneNote());
-        GridPane account = new GridPane();
-        account.setHgap(24);
-        account.setVgap(22);
-        account.setMinWidth(0);
-        account.getStyleClass().add("profile-grid");
-        var left = new javafx.scene.layout.ColumnConstraints();
-        left.setPercentWidth(50);
-        var right = new javafx.scene.layout.ColumnConstraints();
-        right.setPercentWidth(50);
-        account.getColumnConstraints().addAll(left, right);
-        account.add(profileIdentityField("USERNAME", profile.username(), "profileUsername"), 0, 0);
-        account.add(profileIdentityField("MEMBER ID", profile.userId(), "profileMemberId"), 1, 0);
-        account.add(profileIdentityField("ROLE", profile.role(), "profileRole"), 0, 1);
-        account.add(profileIdentityField("ACCOUNT STATUS", profile.status(), "profileStatus"), 1, 1);
-        account.add(field("JOINED", format(profile.joinedAt())), 0, 2);
-        account.add(field("ACCOUNT LAST UPDATED", format(profile.updatedAt())), 1, 2);
-        account.add(field("LAST LOGIN", format(profile.lastLoginAt())), 0, 3, 2, 1);
-
-        TextField fullName = profileInput(profile.fullName(), "profileFullName", "Full name (required)");
-        TextField email = profileInput(profile.email(), "profileEmail", "Email address (required)");
-        TextField phone = profileInput(profile.phone(), "profilePhone", "Phone number (optional)");
-        Label feedback = label(message == null ? "" : message, "section-note");
-        feedback.setId("profileFeedback");
+        fullName.setText(profile.fullName() == null ? "" : profile.fullName());
+        email.setText(profile.email() == null ? "" : profile.email());
+        phone.setText(profile.phone() == null ? "" : profile.phone());
+        feedback.setText(message == null ? "" : message);
         feedback.visibleProperty().bind(feedback.textProperty().isNotEmpty());
         feedback.managedProperty().bind(feedback.visibleProperty());
-        Button save = button("Save changes", "primary-button", null);
-        save.setId("profileSave");
-        save.setDisable(true);
-        Button reset = button("Reset fields", "secondary-button", null);
-        reset.setId("profileReset");
-        reset.setDisable(true);
-        Button refresh = refreshButton();
-        refresh.setId("profileRefresh");
         Runnable draftChanged = () -> {
             if (disposed || profileSnapshot != profile || !"My profile & QR".equals(currentPage)) return;
             profileDirty = !sameProfileDetails(profile, fullName.getText(), email.getText(), phone.getText());
@@ -964,54 +1097,24 @@ public final class UserDashboardController implements DashboardView {
             draftChanged.run();
         });
         save.setOnAction(event -> saveProfile(profile, fullName.getText(), email.getText(), phone.getText(), feedback));
-        Button changePassword = button("Change password", "secondary-button", this::openPasswordChange);
-        changePassword.setId("memberChangePassword");
-
-        VBox qrInformation = new VBox(10,
-                label("YOUR LIBRARY QR", "stat-label"),
-                label("Generate / replace your QR", "section-title"),
-                label("Confirm your current password to create a reusable QR and save it as PNG."
-                        + " Generation immediately invalidates your previous QR. A database hash cannot recreate an earlier QR image.", "muted"));
-        qrInformation.getStyleClass().add("qr-placeholder");
-        contentBox.getChildren().addAll(
-                section("My account", "Loaded from your own database account. Identity and access fields are read-only.", account),
-                section("Contact details", "Edit your full name, email, and optional phone number. Changes are saved only when you choose Save changes.",
-                        profileInputField("FULL NAME", fullName),
-                        profileInputField("EMAIL", email),
-                        profileInputField("PHONE", phone),
-                        new HBox(12, save, reset, refresh), feedback,
-                        note("Name: up to 150 characters. Email: up to 255 characters. Phone: up to 30 characters; clear it to remove it. Email format is checked, but mailbox ownership is not verified.")),
-                section("Account security", "Changing your password requires your current password.",
-                        changePassword,
-                        note("A successful password change revokes your saved QR login credential and signs out this app session. Sign in with the new password, then generate a replacement QR if needed.")),
-                section("My library QR", "Keep your QR private; it may grant access to your library account.",
-                        qrInformation,
-                        button("Generate / replace my QR", "primary-button", () ->
-                                UserQrDialog.show(root.getScene().getWindow(), signedInUser))),
-                note("The QR window requires the database connection. Passwords and raw tokens are not shown as text. The QR image itself is a secret; keep it private."));
+        refresh.setOnAction(event -> retryCurrentPage());
+        changePassword.setOnAction(event -> openPasswordChange());
+        generateQr.setOnAction(event -> UserQrDialog.show(root.getScene().getWindow(), signedInUser));
+        contentBox.getChildren().add(profilePage);
     }
 
-    private TextField profileInput(String value, String id, String prompt) {
-        TextField input = new TextField(value == null ? "" : value);
-        input.setId(id);
-        input.setPromptText(prompt);
-        input.setAccessibleText(prompt);
-        input.setMaxWidth(Double.MAX_VALUE);
-        input.setMinWidth(0);
-        input.getStyleClass().add("search-field");
-        return input;
+    private FXMLLoader memberLayout(String filename) throws IOException {
+        URL location = getClass().getResource("/com/group1/bookit/" + filename);
+        if (location == null) throw new IOException(filename + " is missing.");
+        FXMLLoader view = new FXMLLoader(location);
+        view.load();
+        return view;
     }
 
-    private VBox profileInputField(String title, TextField input) {
-        VBox box = new VBox(7, label(title, "stat-label"), input);
-        box.setMinWidth(0);
-        return box;
-    }
-
-    private VBox profileIdentityField(String title, String value, String id) {
-        VBox box = field(title, display(value));
-        box.getChildren().get(1).setId(id);
-        return box;
+    private static <T> T pageControl(FXMLLoader view, String name, Class<T> type) throws IOException {
+        Object value = view.getNamespace().get(name);
+        if (!type.isInstance(value)) throw new IOException("The member page layout is missing " + name + ".");
+        return type.cast(value);
     }
 
     private static boolean sameProfileDetails(MemberProfile profile, String name, String email, String phone) {
@@ -1086,11 +1189,19 @@ public final class UserDashboardController implements DashboardView {
     private void showProfileRecovery() {
         setDataMode("PROFILE NEEDS REFRESH", "offline-badge");
         pageSubtitleLabel.setText("Review your saved profile before another profile change.");
-        Button refresh = button("Refresh", "primary-button", this::refreshProfileAfterSaveFailure);
-        refresh.setId("profileRefresh");
-        contentBox.getChildren().setAll(section("Profile save needs review", null,
-                label(profileRecoveryMessage, "error-note"),
-                note("No save is repeated automatically. Refresh only reads the current database record; it does not resubmit your previous changes."), refresh));
+        try {
+            FXMLLoader view = memberLayout("MemberProfileRecovery.fxml");
+            pageControl(view, "profileRecoveryMessage", Label.class).setText(profileRecoveryMessage);
+            pageControl(view, "profileRefresh", Button.class)
+                    .setOnAction(event -> refreshProfileAfterSaveFailure());
+            contentBox.getChildren().setAll((VBox) view.getRoot());
+        } catch (IOException | ClassCastException unavailable) {
+            Button refresh = button("Refresh", "primary-button", this::refreshProfileAfterSaveFailure);
+            refresh.setId("profileRefresh");
+            contentBox.getChildren().setAll(section("Profile save needs review", null,
+                    label(profileRecoveryMessage, "error-note"),
+                    note("No save is repeated automatically. Refresh only reads the current database record; it does not resubmit your previous changes."), refresh));
+        }
     }
 
     private void refreshProfileAfterSaveFailure() {
@@ -1142,8 +1253,6 @@ public final class UserDashboardController implements DashboardView {
             renderProfile(original, null);
         }
         dataLoader.cancel();
-        // Hold the owner guard for the entire modal, including idle entry and
-        // terminal acknowledgement, not only while its transaction is running.
         saving.set(true);
         try {
             PasswordChangeDialog.show(window, identity, ignored -> {},
@@ -1156,8 +1265,6 @@ public final class UserDashboardController implements DashboardView {
     private void finishPasswordSession(AuthenticatedUser expected, Window window) {
         if (disposed || signedInUser != expected) return;
         if (SessionManager.getCurrentUser() != expected) {
-            // A late callback must not log out a replacement session. Retire
-            // this old view without touching that other session or its window.
             dispose();
             root.setDisable(true);
             return;
@@ -1193,14 +1300,6 @@ public final class UserDashboardController implements DashboardView {
 
     private static String zoneNote() {
         return "Times shown in " + DISPLAY_ZONE.getId() + " (converted from UTC)";
-    }
-
-    private VBox field(String title, String value) {
-        Label valueLabel = label(value, "profile-value");
-        VBox field = new VBox(6, label(title, "stat-label"), valueLabel);
-        field.getStyleClass().add("profile-field");
-        field.setMinWidth(0);
-        return field;
     }
 
     private Label note(String text) {

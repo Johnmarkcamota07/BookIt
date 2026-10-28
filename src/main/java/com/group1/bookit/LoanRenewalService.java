@@ -17,11 +17,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Own-loan renewals. Call on a worker thread. No credentials/session are cached.
- * Policy: once, seven days from the current due date, before the deadline,
- * no positive unpaid fine for this member, and no other member waiting.
- * Failed/uncertain writes are never retried automatically; reconcile history.
- */
 public class LoanRenewalService {
     private static final int TIMEOUT = 12;
     private static final String HISTORY = """
@@ -41,7 +36,6 @@ public class LoanRenewalService {
         OVERDUE, UNPAID_FINE, WAITING_RESERVATION
     }
 
-    /** Fixed safe messages, never SQL or values supplied by another member. */
     public static final class RejectedException extends IllegalArgumentException {
         private final Reason reason;
         public RejectedException(Reason reason) {
@@ -68,8 +62,7 @@ public class LoanRenewalService {
         long user = actorId(actor);
         try (Connection c = open(); PreparedStatement s = prepare(c, HISTORY, user);
                 ResultSet r = s.executeQuery()) {
-            // An anchored LEFT JOIN distinguishes an authorized empty history
-            // from a missing/inactive/reassigned account in one read snapshot.
+         
             if (!r.next()) throw reject(Reason.ACCOUNT_UNAVAILABLE);
             List<LoanRenewal> results = new ArrayList<>();
             do {
@@ -106,8 +99,7 @@ public class LoanRenewalService {
             c.setAutoCommit(false);
             try {
                 long book, copy;
-                // Non-locking routing only. Every value is rechecked below
-                // after book -> member -> copy -> loan locks, matching issue.
+                
                 try (PreparedStatement s = prepare(c, """
                         SELECT bc.book_id,l.copy_id FROM loan l
                         JOIN book_copy bc ON bc.copy_id=l.copy_id
@@ -156,9 +148,7 @@ public class LoanRenewalService {
                     throw reject(Reason.ALREADY_RENEWED);
                 }
                 if (!oldDue.equals(expectedDueAt)) throw reject(Reason.STALE_LOAN);
-                // Admin fine creation locks its loan before inserting a fine.
-                // Lock every own loan (including returned loans) before reading
-                // fine rows, so a simultaneous charge cannot slip past the check.
+
                 boolean found = false;
                 try (PreparedStatement s = prepare(c,
                         "SELECT loan_id FROM loan WHERE user_id=? ORDER BY loan_id FOR UPDATE", user);
@@ -185,7 +175,7 @@ public class LoanRenewalService {
                         ORDER BY reserved_at,reservation_id FOR UPDATE
                         """, book, user)) throw reject(Reason.WAITING_RESERVATION);
                 LocalDateTime now;
-                // Read the server clock AFTER all policy reads/lock waits.
+                
                 try (PreparedStatement s = prepare(c, "SELECT UTC_TIMESTAMP(6)");
                         ResultSet r = s.executeQuery()) {
                     if (!r.next()) throw invalidData();
@@ -217,9 +207,7 @@ public class LoanRenewalService {
                         WHERE loan_id=? AND user_id=? AND copy_id=? AND returned_at IS NULL AND due_at=?
                           AND due_at>UTC_TIMESTAMP(6)
                         """, newDue, loan, user, copy, oldDue)) {
-                    // Recheck immediately at the write too: receipt insertion
-                    // could have waited for a unique-key lock after the clock
-                    // read. Any zero-row result rolls back the receipt as well.
+                   
                     if (s.executeUpdate() != 1) throw new SQLException("The loan changed or reached its deadline before its renewal could be saved.", "40001");
                 }
                 LoanRenewal receipt = new LoanRenewal(Long.toString(loan), requestId, title, barcode, oldDue, newDue, now);

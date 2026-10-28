@@ -53,8 +53,6 @@ public class App extends Application {
     }
 
     public static void main(String[] args) {
-        // Open the login screen immediately. Authentication already checks the
-        // database on a worker; a startup probe only delays launch when offline.
         launch(args);
     }
 

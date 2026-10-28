@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.util.Map;
 import javax.imageio.ImageIO;
 
-/** Produces images; authentication decides whether a login QR may be issued. */
 public final class CodeGenerator {
     private CodeGenerator() {}
 
@@ -44,7 +43,6 @@ public final class CodeGenerator {
         }
     }
 
-    /** Encodes the exact persisted barcode. Do not add the legacy BOOK: prefix. */
     public static BufferedImage generateCopyBarcode(String exactStoredBarcode) throws WriterException {
         if (exactStoredBarcode == null || !exactStoredBarcode.matches("[\\x21-\\x7E]{1,50}")) {
             throw new IllegalArgumentException("Use a stored barcode of 1 to 50 non-space printable ASCII characters.");
@@ -56,7 +54,6 @@ public final class CodeGenerator {
         return MatrixToImageWriter.toBufferedImage(matrix);
     }
 
-    /** Barcode-only high-resolution PNG, including its left/right quiet zones. */
     public static byte[] copyBarcodePng(String exactStoredBarcode) throws WriterException, IOException {
         try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             if (!ImageIO.write(generateCopyBarcode(exactStoredBarcode), "PNG", output)) {

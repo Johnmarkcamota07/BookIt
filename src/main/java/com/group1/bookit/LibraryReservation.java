@@ -4,14 +4,9 @@
  */
 package com.group1.bookit;
 
-/**
- *
- * @author John Mark
- */
+
 import java.time.LocalDateTime;
 
-/** A member's own reservation. Stored timestamps are UTC; queue position is
- * null for completed history and starts at one for active reservations. */
 public record LibraryReservation(String reservationId, String bookId,
         String bookTitle, LocalDateTime reservedAt, String status, Long queuePosition) {
     public boolean isActive() {

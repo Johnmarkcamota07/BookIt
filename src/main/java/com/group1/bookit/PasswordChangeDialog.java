@@ -26,7 +26,6 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 
-/** Shared USER/ADMIN password change. It never logs or displays entered secrets. */
 public final class PasswordChangeDialog {
     private final Stage stage = new Stage();
     private final Window owner;
@@ -176,7 +175,6 @@ public final class PasswordChangeDialog {
                 outcome = service.changePassword(actor, oldWork, newWork, confirmedWork);
                 if (outcome == null) failed = true;
             } catch (Exception error) {
-                // The transaction may have committed: never retry or expose driver messages.
                 failed = true;
             } finally {
                 wipe(oldWork, newWork, confirmedWork);
@@ -186,7 +184,6 @@ public final class PasswordChangeDialog {
             try {
                 Platform.runLater(() -> complete(result, uncertain));
             } catch (IllegalStateException applicationClosing) {
-                // Application shutdown: arrays were wiped; no callbacks or retries follow.
             }
         }, "bookit-password-change");
         worker.setDaemon(true);
@@ -235,7 +232,6 @@ public final class PasswordChangeDialog {
         disposed = true;
         clearFields();
         detachOwner();
-        // Normal close is blocked while running. Forced hiding must not route a new session.
         boolean mustSignOut = terminal && !abandoned && (owner == null || owner.isShowing());
         setHostBusy(false);
         if (mustSignOut && !signedOut) {
@@ -244,7 +240,6 @@ public final class PasswordChangeDialog {
         }
     }
 
-    /** Owner shutdown is not a user retry and cannot trigger a late route change. */
     private void abandon() {
         if (disposed) return;
         abandoned = true;

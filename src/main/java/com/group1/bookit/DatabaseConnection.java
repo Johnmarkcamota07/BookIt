@@ -12,7 +12,6 @@ import java.sql.Statement;
 import java.util.Locale;
 import java.util.Properties;
 
-/** One explicitly selected database; connection failures never become null. */
 public final class DatabaseConnection {
     private DatabaseConnection() {}
 
@@ -20,13 +19,10 @@ public final class DatabaseConnection {
         final Dotenv dotenv;
         try {
             var configuration = Dotenv.configure().ignoreIfMissing();
-            // A packaged app need not start with its executable folder as cwd.
-            // The Windows launcher supplies its own explicit config directory.
             String directory = System.getProperty("bookit.configDir");
             if (directory != null && !directory.isBlank()) configuration.directory(directory);
             dotenv = configuration.load();
         } catch (RuntimeException error) {
-            // A dotenv parse exception can contain the bad line, including secrets.
             throw new SQLException("Database configuration could not be loaded. Check the .env file.", "08001");
         }
 
@@ -38,7 +34,6 @@ public final class DatabaseConnection {
         String prefix = mode.equals("LOCAL") ? "LOCAL_DB_" : "DB_";
         String url = required(dotenv, prefix + "URL").strip();
         String user = required(dotenv, prefix + "USER").strip();
-        // Keep DB_PASS from the user's existing configuration. Do not trim passwords.
         String password = value(dotenv, prefix + "PASS");
         if (password == null) {
             throw new SQLException("Missing database configuration: " + prefix + "PASS", "08001");
@@ -50,13 +45,11 @@ public final class DatabaseConnection {
         Properties properties = new Properties();
         properties.setProperty("user", user);
         properties.setProperty("password", password);
-        // Connector/J defaults for URLs that do not override these properties.
         properties.setProperty("connectTimeout", "10000");
         properties.setProperty("socketTimeout", "15000");
 
         Connection connection = DriverManager.getConnection(url, properties);
         try (Statement statement = connection.createStatement()) {
-            // Existing schema/authentication use UTC DATETIME values.
             statement.setQueryTimeout(12);
             statement.execute("SET time_zone = '+00:00'");
         } catch (SQLException error) {

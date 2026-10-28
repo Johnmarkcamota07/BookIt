@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- Printable dimensions and snapshot values are supplied by ReportExporter.
+     This page owns its stylesheet, independently of the dashboard Scene. -->
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      spacing="8.0" styleClass="report-print-page" stylesheets="@report-print.css">
+    <children>
+        <Label fx:id="reportPrintHeading" wrapText="true" styleClass="report-print-heading"/>
+        <Label fx:id="reportPrintCaption" styleClass="report-print-caption"/>
+    </children>
+</VBox>

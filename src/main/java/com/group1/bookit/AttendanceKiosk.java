@@ -114,7 +114,6 @@ import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 
-/** Password-gated entrance mode. Fullscreen is not an operating-system kiosk lock. */
 public final class AttendanceKiosk {
     private final AuthenticatedUser actor;
     private final AttendanceService attendance;
@@ -145,7 +144,6 @@ public final class AttendanceKiosk {
                 new AuthenticationService(DatabaseConnection::getConnection)::authenticatePassword);
     }
 
-    /** Package seam for checking password gates without a real account or database. */
     AttendanceKiosk(Window owner, AuthenticatedUser actor, AttendanceService attendance,
                     AttendanceUnlockController.Verifier verifier) {
         this.actor = Objects.requireNonNull(actor, "actor");
@@ -203,7 +201,6 @@ public final class AttendanceKiosk {
 
     @FXML
     private void initialize() {
-        // Only live dimensions stay in Java. The frame is square for preview and decoding.
         cameraFrame.prefWidthProperty().bind(Bindings.min(stage.widthProperty().multiply(.40),
                 stage.heightProperty().multiply(.60)));
         cameraFrame.maxWidthProperty().bind(cameraFrame.prefWidthProperty());
@@ -240,7 +237,6 @@ public final class AttendanceKiosk {
 
     private void stopCamera() {
         running = false;
-        // Do not interrupt native cleanup. The worker closes in finally off the FX thread.
     }
 
     private void scan() {
@@ -296,7 +292,6 @@ public final class AttendanceKiosk {
         } catch (NotFoundException absent) {
             return null;
         } catch (ChecksumException | FormatException unreadable) {
-            // A QR is present but unreadable: do not treat it as leaving the view.
             return "UNREADABLE_QR";
         } finally {
             reader.reset();

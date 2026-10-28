@@ -16,8 +16,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-/** Read-only member fine history. Invoke on a worker thread. Authorization and
- * owned fine data are evaluated by the same SELECT, not separate snapshots. */
 public class MemberFineService {
     private static final int QUERY_TIMEOUT_SECONDS = 12;
     private static final String MY_FINES_SQL = """
@@ -70,8 +68,7 @@ public class MemberFineService {
                     String fineId = result.getString("fine_id");
                     if (fineId == null) {
                         if (emptySentinel || !fines.isEmpty()) throw invalidData();
-                        // The outer join supplies an all-NULL fine row only when
-                        // an active member genuinely has no fine records.
+
                         for (String column : List.of("loan_id", "book_title", "barcode", "amount",
                                 "payment_status", "borrowed_at", "due_at", "returned_at", "paid_at")) {
                             if (result.getObject(column) != null) throw invalidData();

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.VBox?>
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      id="adminRecovery" spacing="16.0" minWidth="0.0" maxWidth="1.7976931348623157E308"
+      styleClass="section-card" stylesheets="@bookit-dashboard.css">
+    <Label fx:id="adminRecoveryTitle" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+    <Label fx:id="adminRecoveryMessage" wrapText="true" minHeight="-Infinity" styleClass="error-note"/>
+    <Button fx:id="adminRecoveryRefresh" text="Refresh" mnemonicParsing="false" maxWidth="-Infinity" styleClass="secondary-button"/>
+</VBox>

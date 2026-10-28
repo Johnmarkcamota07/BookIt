@@ -10,7 +10,6 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import javax.imageio.ImageIO;
 
-/** Local utility until the registration/profile screen has a Generate QR button. */
 public final class UserQrExport {
     private UserQrExport() {}
 

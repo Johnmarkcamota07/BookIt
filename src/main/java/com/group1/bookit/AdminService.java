@@ -225,8 +225,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-/** JDBC work runs on a worker thread. Each operation rechecks the administrator
- * in MySQL; mutations and their audit records commit together. */
 public class AdminService {
     public enum Action {
         ADD_BOOK, EDIT_BOOK, ADD_COPY, UPDATE_COPY, CREATE_MEMBER, SET_MEMBER_STATUS,
@@ -317,7 +315,6 @@ public class AdminService {
         }
     }
 
-    /** Printable data for one physical copy; borrower details are never fetched. */
     public BookCopyLabel copyLabel(AuthenticatedUser actor, String copyId) throws SQLException {
         requireActor(actor);
         long copy = id(copyId, "Copy ID");
@@ -333,7 +330,6 @@ public class AdminService {
         }
     }
 
-    /** Resolves the exact stored barcode. This read does not issue or return a loan. */
     public ScannedBookCopy findCopyByBarcode(AuthenticatedUser actor, String barcode) throws SQLException {
         requireActor(actor);
         String exact = barcode(barcode, true);
@@ -353,8 +349,6 @@ public class AdminService {
         }
     }
 
-    /** Inventory and fines are CURRENT snapshots, not filtered by dates. The
-     * original fine schema has no creation date; do not invent one in reports. */
     public Table report(AuthenticatedUser actor, String type, LocalDate from, LocalDate to) throws SQLException {
         requireActor(actor);
         if (!List.of("Borrowing activity", "Inventory snapshot", "Fine records").contains(type)) {
@@ -389,7 +383,6 @@ public class AdminService {
         Objects.requireNonNull(action, "action");
         Map<String,String> v = new LinkedHashMap<>(Objects.requireNonNull(values, "values"));
         validate(action,v);
-        // The caller is a worker. Hash before acquiring database locks.
         String hash = null;
         if (action == Action.CREATE_MEMBER) {
             char[] secret = v.remove("password").toCharArray();
@@ -412,8 +405,6 @@ public class AdminService {
                     case CHARGE_FINE -> charge(c,v);
                     case ADJUST_FINE, RECORD_PAYMENT, WAIVE_FINE -> changeFine(c,v,action,actor);
                 };
-                // Migration 02 is required: a missing audit table rolls back the
-                // main operation too; unaudited writes are never committed.
                 String target = switch(action) {
                     case ADD_BOOK,EDIT_BOOK -> "book";
                     case ADD_COPY,UPDATE_COPY -> "book_copy";
@@ -452,8 +443,6 @@ public class AdminService {
                 FROM book b LEFT JOIN category cat ON cat.category_id=b.category_id
                 LEFT JOIN publisher p ON p.publisher_id=b.publisher_id ORDER BY b.title,b.book_id
                 """);
-        // Fetch authors independently so copy counts are not multiplied and
-        // GROUP_CONCAT cannot silently truncate long author lists.
         Map<String,List<String>> authors = new LinkedHashMap<>();
         try (PreparedStatement s = prepare(c,"SELECT ba.book_id,a.author_name FROM book_author ba JOIN author a ON a.author_id=ba.author_id ORDER BY ba.book_id,a.author_name,a.author_id"); ResultSet r = s.executeQuery()) {
             while(r.next()) authors.computeIfAbsent(r.getString(1), ignored -> new ArrayList<>()).add(r.getString(2));
@@ -505,7 +494,6 @@ public class AdminService {
         var linkedAuthors=new HashSet<Long>();
         for(String author:authorNames(v)) {
             Long authorId=named(c,"author","author_id","author_name",author);
-            // Database collation can equate names beyond Java's lowercase rules.
             if(linkedAuthors.add(authorId)) update(c,"INSERT INTO book_author(book_id,author_id) VALUES(?,?)",book,authorId);
         }
         return Long.toString(book);
@@ -515,8 +503,6 @@ public class AdminService {
         lockBook(c,book);
         String supplied=barcode(v.get("barcode"),false);
         boolean automatic=supplied.isEmpty();
-        // The temporary value is private to this transaction. Uniqueness is
-        // enforced by uq_copy_barcode for both provisional and final values.
         String initial=automatic?"NEW-"+UUID.randomUUID():supplied;
         long copy=insert(c,"INSERT INTO book_copy(book_id,barcode,status,shelf_location) VALUES(?,?,?,?)",
                 book,initial,v.get("status"),blankNull(text(v,"shelf",50,false)));
@@ -575,13 +561,11 @@ public class AdminService {
         if(head!=null) update(c,"UPDATE reservation SET status='FULFILLED' WHERE reservation_id=?",id(head.get(0),"Reservation ID"));
         return Long.toString(loan);
     }
-    /** A selected READY reservation is not a loan until physical handover is
-     * confirmed. Never substitute the next request when this selected one is stale. */
+    
     private static String issueReserved(Connection c,Map<String,String> v) throws SQLException {
         long reservation=id(v.get("reservationId"),"Reservation ID");
         long user=id(v.get("userId"),"User ID");
         String code=barcode(v.get("barcode"),true);
-        // Routing reads only. Recheck the same row after the book/member/copy locks.
         List<String> selected=row(c,"SELECT book_id,user_id FROM reservation WHERE reservation_id=?",
                 reservation,"This reservation is no longer available. Refresh reservations.");
         long book=id(selected.get(0),"Book ID");
@@ -607,8 +591,6 @@ public class AdminService {
             throw new IllegalArgumentException("Only the selected READY reservation can be picked up. Refresh reservations.");
         LocalDateTime dueUtc=LocalDate.parse(v.get("dueDate")).atTime(23,59,59)
                 .atZone(ZoneId.of("Asia/Manila")).withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
-        // One statement uses the authoritative server clock for both the start
-        // and the future-deadline guard. Opening a form/marking READY starts nothing.
         long loan=insert(c,"INSERT INTO loan(copy_id,user_id,loaned_at,due_at) SELECT ?,?,UTC_TIMESTAMP(),? WHERE ?>UTC_TIMESTAMP()",
                 copy,user,dueUtc,dueUtc);
         if(loan<1 || loan>4294967295L) throw new SQLException("The database returned an invalid loan ID.");
@@ -626,10 +608,7 @@ public class AdminService {
         if(update(c,"UPDATE loan SET returned_at=UTC_TIMESTAMP() WHERE loan_id=? AND returned_at IS NULL",loan)!=1) {
             throw new SQLException("The return did not update exactly one loan.");
         }
-        // Assess inside this same return transaction, after locking the loan.
-        // Do not acquire a member lock here: renewals lock member -> loans.
         FineAutomationService.assessLockedLoan(c,actor,loan);
-        // Physical status is preserved. ON_LOAN is derived, not stored.
         return Long.toString(loan);
     }
     private static String reservationStatus(Connection c,Map<String,String> v) throws SQLException {
@@ -642,8 +621,6 @@ public class AdminService {
             long first=singleId(c,"SELECT reservation_id FROM reservation WHERE book_id=? AND status IN ('PENDING','READY') ORDER BY reserved_at,reservation_id LIMIT 1 FOR UPDATE",book,"No active reservation.");
             if(first!=reservation) throw new IllegalArgumentException("Only the first reservation in the queue can be marked ready.");
             boolean available=false;
-            // Use current locking reads for BOTH copies and open loans. A
-            // repeatable-read snapshot taken before the book lock is stale.
             Table candidates=query(c,List.of("Copy ID"),"SELECT copy_id FROM book_copy WHERE book_id=? AND status='AVAILABLE' ORDER BY copy_id FOR UPDATE",book);
             for(List<String> candidate:candidates.rows()) {
                 if(!exists(c,"SELECT loan_id FROM loan WHERE copy_id=? AND returned_at IS NULL FOR UPDATE",id(candidate.get(0),"Copy ID"))) {available=true;break;}
@@ -663,7 +640,6 @@ public class AdminService {
     }
     private static String changeFine(Connection c,Map<String,String> v,Action action,AuthenticatedUser actor) throws SQLException {
         long fine=id(v.get("fineId"),"Fine ID");
-        // Resolve before locking: all fine writers lock loan -> fine -> provenance.
         long loan=singleId(c,"SELECT loan_id FROM fine WHERE fine_id=?",fine,"Fine not found.");
         List<String> loanRecord=row(c,"SELECT returned_at FROM loan WHERE loan_id=? FOR UPDATE",loan,"Loan not found.");
         List<String> record=row(c,"SELECT payment_status,amount,loan_id FROM fine WHERE fine_id=? FOR UPDATE",fine,"Fine not found.");
@@ -713,7 +689,7 @@ public class AdminService {
                 text(v,"username",64,true); String email=text(v,"email",255,true); text(v,"fullName",150,true); text(v,"phone",30,false);
                 if(!email.matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+")) throw new IllegalArgumentException("Enter a valid email address.");
                 String password=v.get("password");
-                if(password==null || password.length()<15 || password.length()>1024) throw new IllegalArgumentException("Use a password of 15 to 1024 characters.");
+                if(password==null || password.length() < 8 || password.length()>1024) throw new IllegalArgumentException("Use a password of 8 to 1024 characters.");
             }
             case SET_MEMBER_STATUS -> { id(v.get("userId"),"User ID"); choice(v,"status","ACTIVE","DISABLED"); }
             case ISSUE_LOAN -> {
@@ -805,8 +781,8 @@ public class AdminService {
     private static void lockBook(Connection c,long book) throws SQLException {
         row(c,"SELECT book_id FROM book WHERE book_id=? FOR UPDATE",book,"Book not found.");
     }
-    // SQL identifier inputs are fixed constants in this class, never form text.
-    private static Long named(Connection c,String table,String pk,String nameColumn,String value) throws SQLException {
+    
+   private static Long named(Connection c,String table,String pk,String nameColumn,String value) throws SQLException {
         if(value.isEmpty()) return null;
         List<String> found=optionalRow(c,"SELECT "+pk+" FROM "+table+" WHERE "+nameColumn+"=? ORDER BY "+pk+" LIMIT 1 FOR UPDATE",value);
         if(found!=null) return id(found.get(0),"Metadata ID");

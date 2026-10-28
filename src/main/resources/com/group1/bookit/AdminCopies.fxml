@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      id="adminCopiesSection" spacing="16.0" minWidth="0.0" maxWidth="1.7976931348623157E308"
+      styleClass="section-card" stylesheets="@bookit-dashboard.css">
+    <children>
+        <Label text="Physical copies" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+        <Label text="Do not set a copy to borrowed manually: issue or return a loan instead."
+               wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+        <FlowPane hgap="12.0" vgap="12.0" styleClass="toolbar">
+            <children>
+                <Button fx:id="adminCopiesBack" text="Back to books" mnemonicParsing="false" maxWidth="-Infinity" styleClass="secondary-button"/>
+                <Button fx:id="adminAddCopy" text="Add copy" mnemonicParsing="false" maxWidth="-Infinity" styleClass="primary-button"/>
+                <Button fx:id="adminCopyLabel" text="Barcode label / print" mnemonicParsing="false" maxWidth="-Infinity" styleClass="secondary-button"/>
+                <Button fx:id="adminUpdateCopy" text="Update copy" mnemonicParsing="false" maxWidth="-Infinity" styleClass="secondary-button"/>
+                <Button fx:id="adminRefresh" text="Refresh" mnemonicParsing="false" maxWidth="-Infinity" styleClass="secondary-button"/>
+            </children>
+        </FlowPane>
+        <VBox fx:id="adminCopiesGrid" minWidth="0.0"/>
+    </children>
+</VBox>

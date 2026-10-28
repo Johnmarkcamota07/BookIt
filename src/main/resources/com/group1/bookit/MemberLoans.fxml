@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      id="memberLoansPage" spacing="22.0" minWidth="0.0" prefWidth="760.0"
+      styleClass="member-loans-page" stylesheets="@bookit-dashboard.css">
+    <fx:define>
+        <Label fx:id="memberEmptyCurrentLoans" text="You have no current loans." wrapText="true" styleClass="muted"/>
+        <Label fx:id="memberNoMatchingLoans" text="No loans match your search." wrapText="true" styleClass="muted"/>
+    </fx:define>
+    <children>
+        <HBox id="memberLoanStats" spacing="18.0" alignment="TOP_LEFT" fillHeight="true">
+            <children>
+                <VBox spacing="10.0" minWidth="0.0" prefWidth="220.0" maxWidth="1.7976931348623157E308"
+                      HBox.hgrow="ALWAYS" styleClass="stat-card, accent-blue">
+                    <children>
+                        <Label text="ACTIVE LOANS" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                        <Label fx:id="memberActiveLoanCount" wrapText="true" minHeight="-Infinity" styleClass="stat-value"/>
+                        <Label text="Copies not yet returned" wrapText="true" minHeight="-Infinity" styleClass="stat-detail"/>
+                    </children>
+                </VBox>
+                <VBox spacing="10.0" minWidth="0.0" prefWidth="220.0" maxWidth="1.7976931348623157E308"
+                      HBox.hgrow="ALWAYS" styleClass="stat-card, accent-orange">
+                    <children>
+                        <Label text="OVERDUE" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                        <Label fx:id="memberOverdueLoanCount" wrapText="true" minHeight="-Infinity" styleClass="stat-value"/>
+                        <Label text="Open loans past their due time" wrapText="true" minHeight="-Infinity" styleClass="stat-detail"/>
+                    </children>
+                </VBox>
+                <VBox spacing="10.0" minWidth="0.0" prefWidth="220.0" maxWidth="1.7976931348623157E308"
+                      HBox.hgrow="ALWAYS" styleClass="stat-card, accent-green">
+                    <children>
+                        <Label text="RETURNED" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                        <Label fx:id="memberReturnedLoanCount" wrapText="true" minHeight="-Infinity" styleClass="stat-value"/>
+                        <Label text="Completed loans in your account" wrapText="true" minHeight="-Infinity" styleClass="stat-detail"/>
+                    </children>
+                </VBox>
+            </children>
+        </HBox>
+        <VBox id="memberCurrentLoansSection" spacing="16.0" minWidth="0.0" maxWidth="1.7976931348623157E308" styleClass="section-card">
+            <children>
+                <Label text="Current borrowing" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+                <Label fx:id="memberCurrentLoanSubtitle" wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+                <HBox spacing="12.0">
+                    <children>
+                        <TextField fx:id="memberLoanSearch" promptText="Search your current loans…"
+                                   accessibleText="Search your current loans by title, loan ID or copy barcode"
+                                   HBox.hgrow="ALWAYS" styleClass="search-field"/>
+                        <Button fx:id="memberLoanRefresh" text="Refresh" mnemonicParsing="false" maxWidth="-Infinity" styleClass="secondary-button"/>
+                    </children>
+                </HBox>
+                <VBox fx:id="memberCurrentLoansHost" minWidth="0.0"/>
+                <Button fx:id="memberLoanRenew" text="Renew selected loan" disable="true" mnemonicParsing="false"
+                        maxWidth="-Infinity" styleClass="primary-button"/>
+                <Label text="One renewal per loan adds 7 days to its current due date. You must renew before the deadline, have no positive unpaid fines, and have no other member waiting for this title. The database checks these rules when you confirm."
+                       wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+            </children>
+        </VBox>
+        <VBox id="memberReturnedLoansSection" spacing="16.0" minWidth="0.0" maxWidth="1.7976931348623157E308" styleClass="section-card">
+            <children>
+                <Label text="Borrowing history" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+                <Label fx:id="memberReturnedLoanSubtitle" wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+                <VBox fx:id="memberReturnedLoansHost" minWidth="0.0"/>
+            </children>
+        </VBox>
+        <VBox id="memberRenewalHistorySection" spacing="16.0" minWidth="0.0" maxWidth="1.7976931348623157E308" styleClass="section-card">
+            <children>
+                <Label text="Renewal history" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+                <Label fx:id="memberRenewalHistorySubtitle" wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+                <VBox fx:id="memberRenewalHistoryHost" minWidth="0.0"/>
+            </children>
+        </VBox>
+        <Label text="An empty table means no matching records were returned; database failures are shown separately, not as empty loans. Refresh after staff change a loan."
+               wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+    </children>
+</VBox>
+

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      id="memberFineDetailsPage" spacing="22.0" minWidth="0.0" styleClass="page-content" stylesheets="@bookit-dashboard.css">
+    <children>
+        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field">
+            <children>
+                <Label text="FINE ID / LOAN ID" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                <Label fx:id="memberFineIdentity" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+            </children>
+        </VBox>
+        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field">
+            <children>
+                <Label text="BOOK" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                <Label fx:id="memberFineBook" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+            </children>
+        </VBox>
+        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field">
+            <children>
+                <Label text="COPY BARCODE" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                <Label fx:id="memberFineBarcode" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+            </children>
+        </VBox>
+        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field">
+            <children>
+                <Label text="RECORDED AMOUNT" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                <Label fx:id="memberFineAmount" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+            </children>
+        </VBox>
+        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field">
+            <children>
+                <Label text="PAYMENT STATUS" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                <Label fx:id="memberFinePaymentStatus" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+            </children>
+        </VBox>
+        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field">
+            <children>
+                <Label text="BORROWED" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                <Label fx:id="memberFineBorrowed" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+            </children>
+        </VBox>
+        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field">
+            <children>
+                <Label text="DUE" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                <Label fx:id="memberFineDue" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+            </children>
+        </VBox>
+        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field">
+            <children>
+                <Label text="RETURNED" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                <Label fx:id="memberFineReturned" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+            </children>
+        </VBox>
+        <VBox spacing="6.0" minWidth="0.0" styleClass="profile-field">
+            <children>
+                <Label text="PAID AT" wrapText="true" minHeight="-Infinity" styleClass="stat-label"/>
+                <Label fx:id="memberFinePaidAt" wrapText="true" minWidth="0.0" minHeight="-Infinity" styleClass="profile-value"/>
+            </children>
+        </VBox>
+        <Label fx:id="memberFineZoneNote" wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+        <Label text="A waived charge is not owed; its original amount remains recorded. Contact the library desk about a charge or payment."
+               wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+    </children>
+</VBox>
+

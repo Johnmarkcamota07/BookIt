@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      id="adminReportsPage" spacing="22.0" minWidth="0.0" stylesheets="@bookit-dashboard.css">
+    <VBox spacing="16.0" minWidth="0.0" maxWidth="1.7976931348623157E308" styleClass="section-card">
+        <Label text="Report builder" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+        <Label text="CSV exports the complete generated result, not only the rows currently visible after search." wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+        <HBox spacing="18.0" alignment="TOP_LEFT" fillHeight="true">
+            <VBox spacing="7.0" minWidth="0.0" HBox.hgrow="ALWAYS">
+                <Label text="Report" wrapText="true" styleClass="stat-label"/>
+                <ComboBox fx:id="adminReportType" maxWidth="1.7976931348623157E308" accessibleText="Report type"/>
+            </VBox>
+            <VBox spacing="7.0" minWidth="0.0" HBox.hgrow="ALWAYS">
+                <Label text="From" wrapText="true" styleClass="stat-label"/>
+                <DatePicker fx:id="adminReportFrom" editable="false" accessibleText="Report start date"/>
+            </VBox>
+            <VBox spacing="7.0" minWidth="0.0" HBox.hgrow="ALWAYS">
+                <Label text="To" wrapText="true" styleClass="stat-label"/>
+                <DatePicker fx:id="adminReportTo" editable="false" accessibleText="Report end date"/>
+            </VBox>
+        </HBox>
+        <Label fx:id="adminReportRange" wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+        <FlowPane hgap="12.0" vgap="12.0" styleClass="toolbar">
+            <Button fx:id="adminReportGenerate" text="Generate report" mnemonicParsing="false" maxWidth="-Infinity" styleClass="primary-button"/>
+            <Button fx:id="adminReportCsv" text="Export CSV" disable="true" mnemonicParsing="false" maxWidth="-Infinity" styleClass="secondary-button"/>
+            <Button fx:id="adminReportPrint" text="Print / Save PDF" disable="true" mnemonicParsing="false" maxWidth="-Infinity" styleClass="secondary-button"/>
+        </FlowPane>
+    </VBox>
+    <VBox fx:id="adminReportResults" spacing="18.0" minWidth="0.0"/>
+</VBox>

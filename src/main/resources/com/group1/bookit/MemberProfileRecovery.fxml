@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      id="memberProfileRecovery" spacing="16.0" minWidth="0.0" maxWidth="1.7976931348623157E308"
+      styleClass="section-card" stylesheets="@bookit-dashboard.css">
+    <children>
+        <Label text="Profile save needs review" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+        <Label fx:id="profileRecoveryMessage" wrapText="true" minHeight="-Infinity" styleClass="error-note"/>
+        <Label text="No save is repeated automatically. Refresh only reads the current database record; it does not resubmit your previous changes."
+               wrapText="true" minHeight="-Infinity" styleClass="section-note"/>
+        <Button fx:id="profileRefresh" text="Refresh" mnemonicParsing="false" maxWidth="-Infinity" styleClass="primary-button"/>
+    </children>
+</VBox>
+

@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Read-only schema doctor. Never applies migrations or reads member records. */
+
 public final class DatabaseCheck {
     private static final int TIMEOUT = 12;
     private static final Map<String,List<String>> COLUMNS = columns();
@@ -38,7 +38,6 @@ public final class DatabaseCheck {
         if (result != 0) System.exit(result);
     }
 
-    /** 0=schema ready; 1=connection/configuration/check failure; 2=schema issue. */
     public static int run(LibraryRepository.ConnectionProvider provider, PrintStream out) {
         Objects.requireNonNull(out, "output");
         out.println("BookIt database check (read-only; no migrations or library records are changed).");

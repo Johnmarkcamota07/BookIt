@@ -13,8 +13,6 @@ import java.sql.Types;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-/** Own-profile access only. Invoke on a worker, not the JavaFX application thread.
- * Account identity, credentials, privileges and financial records are not editable here. */
 public class MemberProfileService {
     private static final int TIMEOUT_SECONDS = 12;
     private static final String SELECT_PROFILE = """
@@ -30,7 +28,6 @@ public class MemberProfileService {
 
     public enum Reason { INVALID_DETAILS, EMAIL_IN_USE, STALE_PROFILE, ACCOUNT_UNAVAILABLE }
 
-    /** Safe, fixed user-facing rejection; never embeds SQL, credentials or entered values. */
     public static final class RejectedException extends IllegalArgumentException {
         private final Reason reason;
         public RejectedException(Reason reason) {
@@ -87,7 +84,7 @@ public class MemberProfileService {
                                 throw new SQLException("The profile update did not affect exactly one member.", "40001");
                             }
                         } catch (SQLException failure) {
-                            // The only editable unique column is app_user.email.
+                            // yung pwede lang iedit yung unique column app_user.email.
                             if (failure.getErrorCode() == 1062) {
                                 RejectedException duplicate = reject(Reason.EMAIL_IN_USE);
                                 duplicate.initCause(failure);

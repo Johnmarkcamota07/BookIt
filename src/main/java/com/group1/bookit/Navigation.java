@@ -48,7 +48,6 @@ public final class Navigation {
             throw new IOException(filename + " must use a controller implementing DashboardView.");
         }
 
-        // Pass the account AFTER FXML injection; no session is needed in initialize().
         final Scene nextScene;
         try {
             controller.setUser(user);
@@ -60,7 +59,7 @@ public final class Navigation {
             throw error;
         }
 
-        // Save the session only after the dashboard is successfully prepared.
+        // Save the session only after the dashboard is shown. abo ko na yah
         disposeDashboard(stage);
         SessionManager.login(user);
         stage.getProperties().put(DASHBOARD, controller);
@@ -71,7 +70,6 @@ public final class Navigation {
             });
             stage.getProperties().put(CLEANUP_INSTALLED, Boolean.TRUE);
         }
-        // Measure normal-window bounds before requesting fullscreen below.
         stage.setFullScreen(false);
         stage.setMaximized(false);
         stage.setScene(nextScene);
@@ -80,13 +78,11 @@ public final class Navigation {
         stage.sizeToScene();
         stage.centerOnScreen();
         stage.show();
-        // Include the native title bar/borders so the scene remains at least
-        // 1024 x 700. FXML minimums alone do not constrain the desktop window.
+       
         double frameWidth = Math.max(0, stage.getWidth() - nextScene.getWidth());
         double frameHeight = Math.max(0, stage.getHeight() - nextScene.getHeight());
         stage.setMinWidth(1024 + frameWidth);
         stage.setMinHeight(700 + frameHeight);
-        // Apply to either role. Keep the default Escape shortcut available.
         stage.setFullScreen(true);
     }
 

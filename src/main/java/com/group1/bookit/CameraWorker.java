@@ -4,7 +4,6 @@
  */
 package com.group1.bookit;
 
-/** Serializes scanner ownership until the previous worker has released its camera. */
 final class CameraWorker {
     private static final Object CAMERA = new Object();
 
@@ -22,12 +21,10 @@ final class CameraWorker {
     }
 
     static void release(AutoCloseable camera) {
-        // Webcam.close() can return without releasing hardware on an interrupted thread.
         boolean interrupted = Thread.interrupted();
         try {
             camera.close();
         } catch (Exception | LinkageError ignored) {
-            // Cleanup must not deliver a stale scanner result or block window closing.
         } finally {
             if (interrupted) Thread.currentThread().interrupt();
         }

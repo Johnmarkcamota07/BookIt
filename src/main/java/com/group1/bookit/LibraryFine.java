@@ -8,8 +8,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
-/** A member's own fine, preserving the original charged amount even when paid
- * or waived. Loan and payment timestamps are stored UTC, not invented fine dates. */
+
 public record LibraryFine(String fineId, String loanId, String bookTitle,
         String barcode, BigDecimal amount, String paymentStatus,
         LocalDateTime borrowedAt, LocalDateTime dueAt,

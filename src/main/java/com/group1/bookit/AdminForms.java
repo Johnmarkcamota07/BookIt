@@ -65,7 +65,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Window;
 
-/** Editable admin forms. No SQL, saved passwords, or hidden database mutations. */
 final class AdminForms {
     private AdminForms() {}
 
@@ -157,8 +156,6 @@ final class AdminForms {
             if ("barcode".equals(spec.kind()) && input instanceof TextField text) {
                 text.setId("adminCopyBarcode");
                 text.setPromptText("Scan into this field, or type the copy code");
-                // USB keyboard scanners commonly append Enter. Reading a code
-                // must not trigger the form's default Save button automatically.
                 text.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
                     if (event.getCode() == KeyCode.ENTER) event.consume();
                 });

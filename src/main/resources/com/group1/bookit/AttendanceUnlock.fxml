@@ -3,60 +3,28 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.group1.bookit.AttendanceKiosk"
-            prefWidth="1100.0" prefHeight="820.0" styleClass="attendance-kiosk"
-            stylesheets="@attendance-kiosk.css">
-    <top>
-        <HBox alignment="CENTER_LEFT" spacing="24.0">
-            <padding><Insets top="22.0" right="28.0" bottom="14.0" left="28.0"/></padding>
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.group1.bookit.AttendanceUnlockController"
+      prefWidth="450.0" prefHeight="260.0" spacing="12.0" styleClass="attendance-unlock"
+      stylesheets="@attendance-kiosk.css">
+    <padding><Insets top="24.0" right="24.0" bottom="24.0" left="24.0"/></padding>
+    <children>
+        <Label fx:id="heading" id="attendanceUnlockHeading" wrapText="true" minHeight="-Infinity"/>
+        <TextField fx:id="username" id="attendanceUnlockUsername" accessibleText="Administrator username"/>
+        <PasswordField fx:id="password" id="attendanceUnlockPassword" promptText="Administrator password"
+                       accessibleText="Administrator password"/>
+        <Label fx:id="error" id="attendanceUnlockError" wrapText="true" minHeight="-Infinity"/>
+        <HBox spacing="10.0">
             <children>
-                <VBox spacing="6.0" HBox.hgrow="ALWAYS">
-                    <children>
-                        <Label text="Library entrance" wrapText="true" minHeight="-Infinity" styleClass="attendance-title"/>
-                        <Label text="Attendance only · This does not sign you into BookIt"
-                               wrapText="true" minHeight="-Infinity" styleClass="attendance-muted"/>
-                    </children>
-                </VBox>
-                <Button id="attendanceExit" text="Exit attendance mode" onAction="#requestExit"/>
+                <Button fx:id="verify" id="attendanceUnlockVerify" text="Verify administrator"
+                        defaultButton="true" onAction="#verifyAdministrator"/>
+                <Button fx:id="cancel" id="attendanceUnlockCancel" text="Cancel" onAction="#cancel"/>
             </children>
         </HBox>
-    </top>
-    <center>
-        <ScrollPane id="attendanceScroll" fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER"
-                    styleClass="attendance-scroll">
-            <content>
-                <VBox alignment="CENTER" spacing="18.0">
-                    <padding><Insets top="16.0" right="32.0" bottom="24.0" left="32.0"/></padding>
-                    <children>
-                        <StackPane fx:id="cameraFrame" id="attendanceCameraFrame" minWidth="220.0" minHeight="220.0"
-                                   styleClass="attendance-camera-frame">
-                            <children>
-                                <ImageView fx:id="cameraImage" id="attendanceCamera" preserveRatio="true"/>
-                            </children>
-                        </StackPane>
-                        <Label text="Show your BookIt QR. First scan: Time In. Next scan: Time Out."
-                               wrapText="true" minHeight="-Infinity" styleClass="attendance-instruction"/>
-                        <Label fx:id="status" id="attendanceStatus" text="Opening camera…"
-                               wrapText="true" minHeight="-Infinity" styleClass="attendance-status"/>
-                        <Button fx:id="retry" id="attendanceRetry" text="Retry camera" disable="true" onAction="#startCamera"/>
-                    </children>
-                </VBox>
-            </content>
-        </ScrollPane>
-    </center>
-    <bottom>
-        <Label text="Remove your QR after scanning. If you forgot to check out, ask the librarian to correct your visit."
-               wrapText="true" minHeight="-Infinity" styleClass="attendance-muted">
-            <BorderPane.margin><Insets top="12.0" right="28.0" bottom="22.0" left="28.0"/></BorderPane.margin>
-        </Label>
-    </bottom>
-</BorderPane>
-
+    </children>
+</VBox>

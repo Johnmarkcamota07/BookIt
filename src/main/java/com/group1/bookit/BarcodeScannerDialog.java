@@ -43,7 +43,6 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 
-/** Reads a physical-copy label; accepting a loan remains the parent form's job. */
 public final class BarcodeScannerDialog {
     private static final String UNAVAILABLE = "Camera unavailable or in use. Close this window and type or scan the copy barcode in the form.";
     private static final Map<DecodeHintType, Object> HINTS = Map.of(
@@ -63,13 +62,11 @@ public final class BarcodeScannerDialog {
     private Thread worker;
     private String result;
 
-    /** Called on the JavaFX thread. Returns the exact label value, or null on cancel. */
     public static String scan(Window owner) {
         requireFxThread();
         return new BarcodeScannerDialog(owner, BarcodeScannerDialog::defaultSource).showAndWait();
     }
 
-    // Injectable image source keeps lifecycle tests independent of camera hardware.
     BarcodeScannerDialog(Window owner, FrameSourceFactory sourceFactory) {
         requireFxThread();
         this.owner = owner;
@@ -78,14 +75,12 @@ public final class BarcodeScannerDialog {
         stage.initModality(owner == null ? Modality.APPLICATION_MODAL : Modality.WINDOW_MODAL);
         stage.setTitle("BookIt - Book copy barcode");
         stage.setMinWidth(560);
-        // Leave room for wrapped instructions/errors without hiding the close button.
         stage.setMinHeight(520);
         stage.setScene(loadScene());
         stage.setOnShown(event -> start());
         stage.setOnHidden(event -> {
             stopped = true;
             if (owner != null) owner.removeEventHandler(WindowEvent.WINDOW_HIDDEN, ownerHidden);
-            // The worker's finally owns native close, including after a delayed open.
         });
         if (owner != null) owner.addEventHandler(WindowEvent.WINDOW_HIDDEN, ownerHidden);
     }
@@ -102,7 +97,6 @@ public final class BarcodeScannerDialog {
             throw new IllegalStateException("BarcodeScanner.fxml is missing from the application resources.");
         }
         FXMLLoader loader = new FXMLLoader(location);
-        // FXML names the controller for editor support; retain this configured instance.
         loader.setControllerFactory(type -> {
             if (type != BarcodeScannerDialog.class) {
                 throw new IllegalStateException("BarcodeScanner.fxml must use BarcodeScannerDialog.");
@@ -118,7 +112,6 @@ public final class BarcodeScannerDialog {
 
     @FXML
     private void initialize() {
-        // These bindings follow live window dimensions; layout and colors are in resources.
         preview.fitWidthProperty().bind(previewFrame.widthProperty());
         previewClip.widthProperty().bind(previewFrame.widthProperty());
         previewClip.heightProperty().bind(previewFrame.heightProperty());
@@ -149,7 +142,6 @@ public final class BarcodeScannerDialog {
                 BufferedImage frame = source.getImage();
                 if (stopped) return;
                 if (frame != null) {
-                    // Decode and preview the full rectangle; square crops can remove label ends.
                     String value = decode(frame);
                     if (value != null) {
                         stopped = true;

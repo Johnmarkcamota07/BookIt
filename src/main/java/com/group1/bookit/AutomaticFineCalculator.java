@@ -27,7 +27,6 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
-/** Pure policy: PHP 20 per Manila calendar day after the due date, no grace/cap. */
 public final class AutomaticFineCalculator {
     public static final ZoneId LIBRARY_ZONE = ZoneId.of("Asia/Manila");
     public static final BigDecimal DAILY_RATE = new BigDecimal("20.00");
@@ -35,7 +34,6 @@ public final class AutomaticFineCalculator {
 
     public record Assessment(int days, BigDecimal amount) {}
 
-    /** All inputs are UTC DATETIME values, not the machine's local timezone. */
     public static Assessment assess(LocalDateTime dueUtc, LocalDateTime returnedUtc,
                                     LocalDateTime serverNowUtc) {
         valid(dueUtc, "Due date");

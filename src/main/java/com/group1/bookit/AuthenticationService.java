@@ -189,7 +189,6 @@ public final class AuthenticationService {
             statement.setString(1, username);
             try (ResultSet rows = statement.executeQuery()) {
                 if (!rows.next()) {
-                    // Do comparable password work even for an unknown username.
                     PasswordHasher.verify(entered, DummyHash.VALUE);
                     return null;
                 }
@@ -202,8 +201,6 @@ public final class AuthenticationService {
                 || !"USER".equals(account.user().role()))) return null;
         if (!account.active() || account.locked()) return null;
         if (!PasswordHasher.verify(entered, account.passwordHash())) {
-            // Keep the shared SMALLINT UNSIGNED counter representable even if
-            // existing data was imported with a saturated failure count.
             int attempts = Math.min(65_535, Math.max(0, account.failures()) + 1);
             try (PreparedStatement statement = connection.prepareStatement("""
                     UPDATE app_user SET failed_login_attempts = ?,
@@ -262,7 +259,6 @@ public final class AuthenticationService {
             connection.setAutoCommit(false);
             try {
                 T result = work.run(connection);
-                // Commit rejected-login counters as well as successful operations.
                 connection.commit();
                 return result;
             } catch (SQLException | RuntimeException error) {

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      id="adminCopyDetails" spacing="22.0" minWidth="0.0" styleClass="page-content" stylesheets="@bookit-dashboard.css">
+    <Label fx:id="adminCopyTitle" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+    <Label fx:id="adminCopyIdentity" wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+    <Label fx:id="adminCopyBarcode" wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+    <Label fx:id="adminCopyInventory" wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+    <Label fx:id="adminCopyLoan" wrapText="true" minHeight="-Infinity" styleClass="muted"/>
+</VBox>

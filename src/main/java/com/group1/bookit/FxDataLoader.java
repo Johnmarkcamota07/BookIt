@@ -13,11 +13,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import javafx.application.Platform;
 
-/** A bounded, daemon background worker. Only the latest request can update a page. */
+//background worker po ini syug
 public final class FxDataLoader implements AutoCloseable {
     private final ThreadPoolExecutor executor;
     private Future<?> pending;
-    // Accessed only on the JavaFX thread; worker callbacks inspect it via runLater.
     private long version;
     private boolean closed;
 
@@ -49,7 +48,6 @@ public final class FxDataLoader implements AutoCloseable {
         });
     }
 
-    /** Invalidates even callbacks that have already been queued on the UI thread. */
     public void cancel() {
         requireFxThread();
         version++;
@@ -74,7 +72,7 @@ public final class FxDataLoader implements AutoCloseable {
                 if (!closed && request == version) action.run();
             });
         } catch (IllegalStateException ignored) {
-            // The JavaFX runtime is already shutting down; there is no screen to update.
+            
         }
     }
 

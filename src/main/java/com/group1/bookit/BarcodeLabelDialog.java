@@ -161,7 +161,6 @@ public final class BarcodeLabelDialog {
     private boolean busy;
     private boolean disposed;
 
-    /** Modal preview for a label snapshot already fetched by the administrator. */
     public static void show(Window owner, BookCopyLabel label) {
         requireFxThread();
         try {
@@ -184,7 +183,6 @@ public final class BarcodeLabelDialog {
         alert.showAndWait();
     }
 
-    /** Package-level seam: no file chooser, printer discovery, or database access. */
     BarcodeLabelDialog(Window owner, BookCopyLabel copy) throws IOException, WriterException {
         this(owner, copy, BarcodeLabelDialog::writePng);
     }
@@ -206,7 +204,6 @@ public final class BarcodeLabelDialog {
         stage.setMinWidth(640);
         stage.setMinHeight(560);
         Scene scene = loadScene();
-        // Create output resources only after both FXML templates loaded successfully.
         worker = Executors.newSingleThreadExecutor(task -> {
             Thread thread = new Thread(task, "bookit-copy-label-output");
             thread.setDaemon(true);
@@ -227,7 +224,6 @@ public final class BarcodeLabelDialog {
 
     private Scene loadScene() throws IOException {
         FXMLLoader loader = new FXMLLoader(view("BarcodeLabel.fxml"));
-        // FXML names the class, while this factory preserves its selected-copy snapshot.
         loader.setControllerFactory(type -> {
             if (type != BarcodeLabelDialog.class) {
                 throw new IllegalStateException("BarcodeLabel.fxml must use BarcodeLabelDialog.");
@@ -258,7 +254,6 @@ public final class BarcodeLabelDialog {
         return location;
     }
 
-    /** Unscaled, self-contained print node: black on white at exactly 100 × 50 mm. */
     static Pane labelNode(BookCopyLabel copy, Image barcode) {
         requireFxThread();
         requireCopy(copy);
@@ -272,7 +267,6 @@ public final class BarcodeLabelDialog {
         }
     }
 
-    /** Supplies only snapshot values to the fixed-size FXML print template. */
     private static final class PrintLabelController {
         private final BookCopyLabel copy;
         private final Image barcode;
@@ -299,7 +293,6 @@ public final class BarcodeLabelDialog {
         }
     }
 
-    /** Printer PageLayout reports printable dimensions in points, not pixels. */
     static boolean fitsPrintableArea(double width, double height) {
         return Double.isFinite(width) && Double.isFinite(height)
                 && width >= LABEL_WIDTH && height >= LABEL_HEIGHT;
@@ -331,8 +324,7 @@ public final class BarcodeLabelDialog {
             job.getJobSettings().setPrintColor(PrintColor.MONOCHROME);
             job.getJobSettings().setPageRanges(new PageRange(1, 1));
             Pane page = labelNode(copy, barcode);
-            // A distinct unscaled node prevents preview zoom or later UI updates
-            // from changing the physical printed label.
+
             new Scene(new Group(page));
             page.applyCss(); page.layout();
             busy = true;
@@ -366,7 +358,6 @@ public final class BarcodeLabelDialog {
         if (selected != null) saveTo(selected.toPath());
     }
 
-    /** Testable export entry point; only the chooser runs on the UI thread. */
     void saveTo(Path destination) {
         requireFxThread();
         if (busy || disposed) return;

@@ -12,9 +12,6 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Objects;
 
-/** Own-account password changes. Invoke on a worker, not the JavaFX thread.
- * Hash changes and existing QR revocation commit together. No raw password is
- * retained or included in any message. This is not an administrator reset API. */
 public class PasswordChangeService {
     private static final int TIMEOUT_SECONDS = 12;
     private static final String SELECT_ACCOUNT = """
@@ -34,9 +31,6 @@ public class PasswordChangeService {
         this.connections = Objects.requireNonNull(connections, "connections");
     }
 
-    /** Rejected password attempts commit shared login counters. SQL/commit failures
-     * propagate and must not be automatically retried. Caller arrays are unchanged;
-     * private password snapshots are wiped on success, rejection and exceptions. */
     public Outcome changePassword(AuthenticatedUser actor, char[] currentPassword,
             char[] newPassword, char[] confirmation) throws SQLException {
         char[] current = null;
@@ -67,8 +61,7 @@ public class PasswordChangeService {
         }
     }
 
-    /** UTF-16 length matches PasswordHasher. Spaces and Unicode are preserved;
-     * passwords are never trimmed and no composition rule is imposed. */
+
     public static void validateInput(char[] current, char[] fresh, char[] confirmed) {
         if (current == null || current.length == 0 || current.length > 1024) {
             throw new IllegalArgumentException("Enter your current password (up to 1024 characters).");

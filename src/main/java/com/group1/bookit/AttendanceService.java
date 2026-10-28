@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/** Attendance is separate from app login. Invoke JDBC methods off the FX thread. */
 public class AttendanceService {
     private static final int TIMEOUT_SECONDS = 12;
     private static final DateTimeFormatter DISPLAY = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -63,12 +62,10 @@ public class AttendanceService {
                     metrics.put("Missing time-out", rows.getString("missing_timeout"));
                 }
             }
-            // Bounded interactive view. Reports retrieve the entire selected date range.
             return new AdminData.Page(metrics, visits(connection, null, null, true));
         });
     }
 
-    /** Includes visits whose entrance falls in the inclusive local date range. */
     public AdminData.Table report(AuthenticatedUser actor, LocalDate from, LocalDate to)
             throws SQLException {
         if (from == null || to == null || to.isBefore(from) || to.equals(LocalDate.MAX)) {
@@ -78,14 +75,12 @@ public class AttendanceService {
                 midnightUtc(to.plusDays(1)), false));
     }
 
-    /** Input times are wall-clock times in this PC's time zone, converted to UTC. */
     public void correct(AuthenticatedUser actor, String visitId, LocalDateTime timeIn,
                         LocalDateTime timeOut, String reason) throws SQLException {
         requireId(visitId, "Visit ID");
         if (timeIn == null) throw new IllegalArgumentException("Time in is required.");
         String explanation = reason == null ? "" : reason.trim();
         if (explanation.isEmpty() || explanation.length() > 300) {
-            // Leave room in the 500-character immutable audit detail for old/new timestamps.
             throw new IllegalArgumentException("Enter a correction reason of 1 to 300 characters.");
         }
         LocalDateTime inUtc = localToUtc(timeIn);
@@ -98,7 +93,6 @@ public class AttendanceService {
             throw new IllegalArgumentException("Time out cannot be before time in.");
         }
         transaction(actor, connection -> {
-            // Discover owner, then lock that user: the same ordering as QR toggles.
             String userId;
             try (PreparedStatement query = statement(connection,
                     "SELECT user_id FROM library_visit WHERE visit_id = ?")) {
@@ -154,7 +148,6 @@ public class AttendanceService {
         });
     }
 
-    /** Reuses LOGIN:<token>, but never creates or changes a BookIt login session. */
     public String toggle(AuthenticatedUser actor, String scannedValue) throws SQLException {
         if (scannedValue == null || !scannedValue.startsWith("LOGIN:")) {
             throw new IllegalArgumentException("This is not a BookIt member QR.");
@@ -166,7 +159,6 @@ public class AttendanceService {
         return transaction(actor, connection -> {
             String userId;
             String member;
-            // Locks member + credential until the visit and audit commit together.
             try (PreparedStatement query = statement(connection, """
                     SELECT u.user_id, u.full_name
                     FROM user_qr_credential q JOIN app_user u ON u.user_id = q.user_id

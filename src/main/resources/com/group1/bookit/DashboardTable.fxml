@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableView?>
+
+
+<TableView xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+           editable="false" minWidth="0.0" minHeight="180.0"
+           styleClass="data-table" stylesheets="@bookit-dashboard.css">
+    <placeholder>
+        <Label text="No matching records." wrapText="true" styleClass="muted"/>
+    </placeholder>
+</TableView>
+

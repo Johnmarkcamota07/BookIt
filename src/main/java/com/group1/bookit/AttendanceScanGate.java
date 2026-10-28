@@ -20,7 +20,6 @@ final class AttendanceScanGate {
     private long absenceStarted;
     private int absentFrames;
 
-    // Call once per actual image frame; null is a successful frame with no QR found.
     boolean accept(String qr, long now) {
         if (qr == null) {
             if (absentFrames++ == 0) absenceStarted = now;

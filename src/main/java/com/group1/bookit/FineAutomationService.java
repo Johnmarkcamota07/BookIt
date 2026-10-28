@@ -18,8 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/** Cumulative, idempotent assessments. Each loan and its audit commit atomically.
- * An administrator invokes this service on a worker thread; it never schedules itself. */
 public class FineAutomationService {
     public record Result(int inspected, int created, int updated, int finalized,
                          int skipped, LocalDateTime completedAt) {}
@@ -38,7 +36,7 @@ public class FineAutomationService {
         List<Long> candidates = new ArrayList<>();
         try (Connection c = open()) {
             authorize(c, actor, false);
-            // No LIMIT: an old unreturned loan cannot starve later overdue loans.
+            
             try (PreparedStatement s = prepare(c, """
                     SELECT l.loan_id FROM loan l
                     LEFT JOIN fine f ON f.loan_id=l.loan_id
@@ -67,7 +65,6 @@ public class FineAutomationService {
                     if (ids != null) {
                         long book=id(ids.get(0),"Book ID"), member=id(ids.get(1),"Member ID"), copy=id(ids.get(2),"Copy ID");
                         required(c,"SELECT book_id FROM book WHERE book_id=? FOR UPDATE",book);
-                        // Disabled members still owe fines; this is a locking/existence check only.
                         required(c,"SELECT user_id FROM app_user WHERE user_id=? FOR UPDATE",member);
                         required(c,"SELECT copy_id FROM book_copy WHERE copy_id=? AND book_id=? FOR UPDATE",copy,book);
                         List<String> locked = row(c,"SELECT user_id,copy_id FROM loan WHERE loan_id=? FOR UPDATE",loan);
@@ -86,7 +83,6 @@ public class FineAutomationService {
                     if (!change.changed()) skipped++;
                 } catch (SQLException | RuntimeException failure) {
                     try { c.rollback(); } catch (SQLException rollback) { failure.addSuppressed(rollback); }
-                    // Includes unknown commit outcomes: never replay inside this run.
                     throw failure;
                 }
             }
@@ -100,8 +96,6 @@ public class FineAutomationService {
         return new Result(inspected,created,updated,finalized,skipped,completed);
     }
 
-    /** For an already authorized ADMIN transaction holding the loan row lock.
-     * Uses the caller's transaction; it never commits, rolls back, or opens a connection. */
     public static Change assessLockedLoan(Connection c, AuthenticatedUser actor, long loanId) throws SQLException {
         actor(actor);
         requireTransaction(c);
@@ -164,14 +158,12 @@ public class FineAutomationService {
         return new Change(false,updated,finalized);
     }
 
-    /** Caller must already hold the corresponding loan and fine row locks. */
     public static boolean isAutomaticLocked(Connection c,long fineId) throws SQLException {
         requireTransaction(c);
         validId(fineId,"Fine ID");
         return metadata(c,fineId)!=null;
     }
 
-    /** An intentional administrator adjustment permanently opts this fine out. */
     public static void markManualOverride(Connection c,long fineId) throws SQLException {
         requireTransaction(c);
         validId(fineId,"Fine ID");

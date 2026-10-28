@@ -4,11 +4,7 @@
  */
 package com.group1.bookit;
 import java.time.LocalDateTime;
-/**
- *
- * @author John Mark
- */
-/** A member's non-secret account details. Database timestamps are UTC. */
+
 public record MemberProfile(String userId, String username, String fullName,
         String email, String phone, String role, String status,
         LocalDateTime joinedAt, LocalDateTime updatedAt, LocalDateTime lastLoginAt) {

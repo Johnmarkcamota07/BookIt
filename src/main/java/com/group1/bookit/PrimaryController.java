@@ -31,7 +31,6 @@ public class PrimaryController {
 
     public PrimaryController() { this(new AuthenticationService()); }
 
-    /** Allows offline login checks without changing the FXML or opening a database. */
     public PrimaryController(AuthenticationService authenticationService) {
         this.authenticationService = java.util.Objects.requireNonNull(authenticationService);
     }
@@ -105,7 +104,6 @@ public class PrimaryController {
         };
         task.setOnSucceeded(done -> {
             loginPending = false;
-            //prevents error by not processing after user left the log in 
             if (!loginStage.isShowing() || loginStage.getScene() != loginScene) return;
             loginScene.getRoot().setDisable(false);
             AuthenticatedUser user = task.getValue();
@@ -149,8 +147,7 @@ public class PrimaryController {
             qrStage.initModality(Modality.WINDOW_MODAL);
 
             qrController.setOnLoginSuccess(user -> {
-                // QRreaderController must call this on the JavaFX thread, only
-                // after AuthenticationService has returned a verified account.
+                
                 if (!qrStage.isShowing()) return;
                 qrStage.close();
                 if (loginStage.isShowing() && loginStage.getScene() == loginScene) {
@@ -174,7 +171,6 @@ public class PrimaryController {
         try {
             Navigation.showDashboard(loginStage, user);
         } catch (IOException | RuntimeException error) {
-            // stay on log in screen while loading dashboard
             System.err.println("Dashboard loading failed: " + error.getClass().getSimpleName()
                     + ". Check FXML/controller/resource compatibility; raw exception details were not logged.");
             SessionManager.logout();

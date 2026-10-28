@@ -4,7 +4,6 @@
  */
 package com.group1.bookit;
 
-/** Read-only physical-copy lookup, including an open loan when one exists. */
 public record ScannedBookCopy(String copyId, String bookId, String title, String barcode,
                               String status, String shelf, String openLoanId, String memberName) {}
 

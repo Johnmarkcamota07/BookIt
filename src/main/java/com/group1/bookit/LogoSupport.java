@@ -9,7 +9,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelReader;
 
-/** Fits the supplied PNG in the sidebar without altering the source image. */
 public final class LogoSupport {
     private LogoSupport() {}
 
@@ -22,8 +21,6 @@ public final class LogoSupport {
             view.setImage(image);
         }
         if (image.isError()) throw new IllegalStateException("The BookIt logo could not be loaded.");
-        // The original has a large, almost-transparent border. Crop the VIEWPORT
-        // only; ignore faint alpha noise around its edges and keep some padding.
         PixelReader pixels = image.getPixelReader();
         int width = (int) image.getWidth(), height = (int) image.getHeight();
         if (pixels != null) {
